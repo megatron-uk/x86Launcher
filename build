@@ -1,0 +1,2 @@
+source /opt/toolchains/x86/watcom/owsetenv.sh
+wmake
