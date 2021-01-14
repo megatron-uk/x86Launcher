@@ -11,11 +11,11 @@ ASM 		= $(TOOLBASE)/binl64/wasm
 LD 		= $(TOOLBASE)/binl64/wlink
 STRIP	= $(TOOLBASE)/binl64/wstrip
 RM		= rm
-RMFLAGS	= -f
+RMFLAGS	= -f -v
 
 # Compile and link flags
 SYSTEM	= dos
-CFLAGS	= -0 -ox -ml -zq
+CFLAGS	= -0 -bc -d0 -ox -ml -zq
 LDFLAGS =
 LIBS 	=
 INCLUDE	= $(TOOLBASE)/h
@@ -25,17 +25,48 @@ TARGET = launcher.exe
 
 all: $(TARGET)
 
-clean:
-	$(RM) $(RMFLAGS) obj/*.o
+# A list of all the object files used in the launcher 
+OBJFILES = obj/bmp.o obj/data.o obj/filter.o obj/fstools.o obj/gfx.o obj/ini.o obj/input.o obj/palette.o obj/test.o obj/ui.o obj/utils.o
 
-OBJFILES = obj/test.o
-
-# Exe
-
+# Link the main launcher target
 $(TARGET): $(OBJFILES)
 	$(LD) system $(SYSTEM) $(LDFLAGS) name $(TARGET) file { $(OBJFILES) }
 	
 # Individual objects
+obj/bmp.o: src/bmp.c
+	$(CC) $(CFLAGS) -i=$(INCLUDE) src/bmp.c -fo=obj/bmp.o
+
+obj/data.o: src/data.c
+	$(CC) $(CFLAGS) -i=$(INCLUDE) src/data.c -fo=obj/data.o
+
+obj/filter.o: src/filter.c
+	$(CC) $(CFLAGS) -i=$(INCLUDE) src/filter.c -fo=obj/filter.o
+	
+obj/fstools.o: src/fstools.c
+	$(CC) $(CFLAGS) -i=$(INCLUDE) src/fstools.c -fo=obj/fstools.o
+	
+obj/gfx.o: src/gfx.c
+	$(CC) $(CFLAGS) -i=$(INCLUDE) src/gfx.c -fo=obj/gfx.o
+
+obj/ini.o: src/ini.c
+	$(CC) $(CFLAGS) -i=$(INCLUDE) src/ini.c -fo=obj/ini.o
+	
+obj/input.o: src/input.c
+	$(CC) $(CFLAGS) -i=$(INCLUDE) src/input.c -fo=obj/input.o
+
+obj/palette.o: src/palette.c
+	$(CC) $(CFLAGS) -i=$(INCLUDE) src/palette.c -fo=obj/palette.o
 	
 obj/test.o: src/test.c
 	$(CC) $(CFLAGS) -i=$(INCLUDE) src/test.c -fo=obj/test.o
+
+obj/ui.o: src/ui.c
+	$(CC) $(CFLAGS) -i=$(INCLUDE) src/ui.c -fo=obj/ui.o
+	
+obj/utils.o: src/utils.c
+	$(CC) $(CFLAGS) -i=$(INCLUDE) src/utils.c -fo=obj/utils.o
+	
+# Clean up
+clean:
+	$(RM) $(RMFLAGS) obj/* 
+	$(RM) $(RMFLAGS) $(TARGET)
