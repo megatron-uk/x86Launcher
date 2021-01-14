@@ -138,7 +138,9 @@ int main() {
 		state->selected_list[i] = NULL;
 	}
 	
+	gfx_Init();
 	
+	return 0;
 	
 	/* ************************************** */
 	/* Parse our ini file */

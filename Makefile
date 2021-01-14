@@ -26,7 +26,7 @@ TARGET = launcher.exe
 all: $(TARGET)
 
 # A list of all the object files used in the launcher 
-OBJFILES = obj/bmp.o obj/data.o obj/filter.o obj/fstools.o obj/gfx.o obj/ini.o obj/input.o obj/palette.o obj/test.o obj/ui.o obj/utils.o
+OBJFILES = obj/bmp.o obj/data.o obj/filter.o obj/fstools.o obj/gfx.o obj/ini.o obj/input.o obj/main.o obj/palette.o obj/test.o obj/ui.o obj/utils.o obj/vesa.o
 
 # Link the main launcher target
 $(TARGET): $(OBJFILES)
@@ -54,6 +54,9 @@ obj/ini.o: src/ini.c
 obj/input.o: src/input.c
 	$(CC) $(CFLAGS) -i=$(INCLUDE) src/input.c -fo=obj/input.o
 
+obj/main.o: src/main.c
+	$(CC) $(CFLAGS) -i=$(INCLUDE) src/main.c -fo=obj/main.o
+	
 obj/palette.o: src/palette.c
 	$(CC) $(CFLAGS) -i=$(INCLUDE) src/palette.c -fo=obj/palette.o
 	
@@ -65,6 +68,9 @@ obj/ui.o: src/ui.c
 	
 obj/utils.o: src/utils.c
 	$(CC) $(CFLAGS) -i=$(INCLUDE) src/utils.c -fo=obj/utils.o
+
+obj/vesa.o: src/vesa.c
+	$(CC) $(CFLAGS) -i=$(INCLUDE) src/vesa.c -fo=obj/vesa.o
 	
 # Clean up
 clean:

@@ -22,6 +22,7 @@
 #include <dos.h>
 
 #include "gfx.h"
+#include "vesa.h"
 #include "utils.h"
 #ifndef __HAS_BMP
 #include "bmp.h"
@@ -35,41 +36,24 @@ int gfx_Init(){
 	// Initialise graphics to a set of configured defaults
 	
 	int status;
+	vbeinfo_t *vbeinfo = NULL;
+	vbeinfo = (vbeinfo_t *) malloc(sizeof(vbeinfo_t));
 	
 	if (GFX_VERBOSE){
 		printf("%s.%d\t Initalising gfx mode\n", __FILE__, __LINE__);	
 	}
 	
-	// HSYNC 24 KHz (640x400)
-	//outportb(PEGC_SCANFREQ_ADDR, PEGC_SCANFREQ_24);
-
-	// 256 color mode
-	//outportb(PEGC_MODE_ADDR, 0x07);
-	//outportb(PEGC_MODE_ADDR, PEGC_BPPMODE_256c);
-	//outportb(PEGC_MODE_ADDR, PEGC_BPPMODE_DUAL_PAGE);
-	//outportb(PEGC_MODE_ADDR, 0x06);
-
-	// Enable Packed Pixel mode
-	//_farpokeb(_dos_ds, PEGC_PIXELMODE_ADDR, PEGC_PIXELMODE_PACKED);
-
-	// Set up DPMI mapper for vram framebuffer regionbui
-	//status = gfx_DPMI();
-	//if (status < 0){
-	//	if (GFX_VERBOSE){
-	//		printf("%s.%d\t Error, Unable to complete gfx initialisation\n", __FILE__, __LINE__);	
-	//	}
-	//	return -1;	
-	//}
+	status = vesa_getvbeinfo(vbeinfo);
+	if (status < 0){
+		if (GFX_VERBOSE){
+			printf("%s.%d\t Error, Unable to complete gfx initialisation [VBE BIOS missing]\n", __FILE__, __LINE__);	
+		}
+		return -1;	
+	} 
 	
-	// Enable linear framebuffer at 16MB and 4095MB
-	//_farpokeb(_dos_ds, PEGC_FB_CONTROL_ADDR, PEGC_FB_ON);
-
-	// Set screen 0 to be active for drawing and active for display
-	//outportb(PEGC_DRAW_SCREEN_SEL_ADDR, 0x00);
-	//outportb(PEGC_DISP_SCREEN_SEL_ADDR, 0x00);
-	
-	// Graphics mode on
-	//outportb(PEGC_GDC_COMMAND_ADDR, GDC_COMMAND_START);
+	if (GFX_VERBOSE){
+		printf("%s.%d\t Found a VESA BIOS\n", __FILE__, __LINE__);	
+	}
 		
 	gfx_Clear();
 	gfx_Flip();
@@ -77,6 +61,12 @@ int gfx_Init(){
 	return 0;
 }
         
+int gfx_CheckMode(){
+	// Check if a given SVGA/VESA mode is available
+	
+	return 0;
+}
+
 int gfx_Close(){
 	//  Return to text mode
 	
