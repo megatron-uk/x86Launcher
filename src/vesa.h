@@ -16,7 +16,13 @@
 */
 
 #define VESA_VERBOSE			1		// Enable/disable debug output for this module at compile time.
+#define VESA_INTERRUPT		0x10
+#define VESA_BIOS_INFO		0x4F00	// The function number to call INT10 on to return VBE info
+#define VESA_MODE_INFO		0x4F01	// The function number to call INT10 on to retrieve information on a specific VBE mode
+#define VESA_MODE_SET		0x4F02	// The function number to call INT10 on to retrieve information on a specific VBE mode
+#define VESA_WINDOW_SET		0x4F05	// The function number to call INT10 on to remap the active VGA memory window
 #define VESA_BIOS_SUCCESS	0x004F	// A 'success' code on quering vbeinfo
+#define VESA_MODELIST_LAST	0xFFFF	// The last entry in the VESA BIOS Information mode list array
 
 /* VESA data structure taken from
    http://www.geocities.com/siliconvalley/horizon/6933/vesa.txt
@@ -53,7 +59,7 @@ typedef struct {
   char    RsvdFieldPosition;		/* Bit posn of lsb of res mask      */
   char    DirectColorModeInfo;	/* Direct color mode attributes     */
 
-  /* VESA 2.0 variables */
+  /* VESA 2.0 variables - which we dont use */
   long    PhysBasePtr;			/* physical address for flat frame buffer */
   long    OffScreenMemOffset;	/* pointer to start of off screen memory */
   short   OffScreenMemSize;		/* amount of off screen memory in 1k units */
@@ -76,6 +82,11 @@ typedef struct vbeinfo_t {
 	char  				misc_data[512];
 } vbeinfo_t;
 
-int vesa_getmodeinfo(unsigned short mode, vesamodeinfo_t *modeinfo);
-int vesa_getvbeinfo(vbeinfo_t *vbeinfo);
-void vesa_printvbe(vbeinfo_t *vbeinfo);
+int 		vesa_getmodeinfo(unsigned short mode, vesamodeinfo_t *modeinfo);
+int 		vesa_getvbeinfo(vbeinfo_t *vbeinfo);
+int		vesa_hasmode(unsigned short mode, vbeinfo_t *vbeinfo);
+int 		vesa_setmode(unsigned short int mode);
+int 		vesa_setwindow(unsigned short int window, unsigned short int position);
+void 	vesa_printvbeinfo(vbeinfo_t *vbeinfo);
+void 	vesa_printvbemodes(vbeinfo_t *vbeinfo);
+void 	vesa_printvbemodeinfo(vesamodeinfo_t *modeinfo);

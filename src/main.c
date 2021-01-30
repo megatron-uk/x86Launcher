@@ -138,10 +138,6 @@ int main() {
 		state->selected_list[i] = NULL;
 	}
 	
-	gfx_Init();
-	
-	return 0;
-	
 	/* ************************************** */
 	/* Parse our ini file */
 	/* ************************************** */
@@ -193,10 +189,28 @@ int main() {
 	// ======================
 	// Initialise GUI 
 	// ======================
+	
+	if (config->verbose){
+		printf("%s.%d\t Now initialising VESA graphics mode\n", __FILE__, __LINE__);
+	}
 	status = gfx_Init();
 	if (status != 0){
-		printf("ERROR! Unable to initialise graphics mode!\n");
-		return status;	
+		printf("%s.%d\t Error unable to initialise graphic mode!!!\n", __FILE__, __LINE__);
+		printf("\n");
+		printf("\n");
+		printf("Your graphics card must support 640x400 at 256 colours.\n");
+		printf("This requires a minimum of 256KBytes of video memory and at\n");
+		printf("least a VESA 1.2 compatible video BIOS.\n");
+		printf("\n");
+		printf("If you do not have a VESA compatible BIOS, but do have 256KB of");
+		printf("video memory, you *may* be able to use UNIVBE to provide a VESA 640x400 mode.");
+		printf("\n");
+		free(config);
+		free(gamedir);
+		free(gamedata);
+		return 1;
+	} else {
+		printf("%s.%d\t Valid graphics mode found\n", __FILE__, __LINE__);	
 	}
 	
 	// Do basic UI initialisation
@@ -211,6 +225,7 @@ int main() {
 	ui_DrawSplashProgress(1, progress);
 	gfx_Flip();
 	
+	return 0;
 	
 	// ======================
 	// Load UI font data

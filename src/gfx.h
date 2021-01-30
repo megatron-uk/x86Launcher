@@ -21,6 +21,9 @@
 #endif
 
 #define GFX_VERBOSE		0			// Turn on/off gfx-specific debug output
+#define GFX_VESA_DESIRED	0x100		// The default VESA mode we want
+#define GFX_BPP			8			// Colour depth that we want
+#define GFX_BITPLANES	1			// The number of bitplanes we want
 #define GFX_ROWS			400			// NUmbe of pixels in a row
 #define GFX_COLS			640			// Number of pixels in a column
 #define GFX_ROW_SIZE		GFX_COLS 	// NUmber of bytes in a row (pixels per row * 2)

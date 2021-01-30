@@ -43,20 +43,52 @@ int gfx_Init(){
 		printf("%s.%d\t Initalising gfx mode\n", __FILE__, __LINE__);	
 	}
 	
+	// Look for a VESA BIOS structure
 	status = vesa_getvbeinfo(vbeinfo);
 	if (status < 0){
 		if (GFX_VERBOSE){
 			printf("%s.%d\t Error, Unable to complete gfx initialisation [VBE BIOS missing]\n", __FILE__, __LINE__);	
 		}
+		free(vbeinfo);
 		return -1;	
-	} 
-	
-	if (GFX_VERBOSE){
-		printf("%s.%d\t Found a VESA BIOS\n", __FILE__, __LINE__);	
+	} else {	
+		if (GFX_VERBOSE){
+			printf("%s.%d\t Found a VESA BIOS\n", __FILE__, __LINE__);	
+		}
 	}
 		
+	// Find mode GFX_VESA_DESIRED
+	status = vesa_hasmode(GFX_VESA_DESIRED, vbeinfo);
+	if (status < 0){
+		if (GFX_VERBOSE){
+			printf("%s.%d\t Error, Unable to complete gfx initialisation [VESA mode missing]\n", __FILE__, __LINE__);	
+		}
+		free(vbeinfo);
+		return -1;	
+	} else {	
+		if (GFX_VERBOSE){
+			printf("%s.%d\t Found VESA mode %xh\n", __FILE__, __LINE__, GFX_VESA_DESIRED);	
+		}
+	}
+	
+	// Set mode GFX_VESA_DESIRED
+	status = vesa_setmode(GFX_VESA_DESIRED);
+	if (status < 0){
+		if (GFX_VERBOSE){
+			printf("%s.%d\t Error, Unable to complete gfx initialisation [VESA set mode failed]\n", __FILE__, __LINE__);	
+		}
+		free(vbeinfo);
+		return -1;	
+	} else {	
+		if (GFX_VERBOSE){
+			printf("%s.%d\t Set VESA mode %xh\n", __FILE__, __LINE__, GFX_VESA_DESIRED);	
+		}
+	}
+	
 	gfx_Clear();
 	gfx_Flip();
+	
+	free(vbeinfo);
 	
 	return 0;
 }
@@ -73,18 +105,6 @@ int gfx_Close(){
 	if (GFX_VERBOSE){
 		printf("%s.%d\t Exiting gfx mode\n", __FILE__, __LINE__);	
 	}
-	//_farpokeb(_dos_ds, PEGC_FB_CONTROL_ADDR, PEGC_FB_OFF);
-
-	// 16 Color mode
-	//outportb(PEGC_MODE_ADDR, 0x07);
-	//outportb(PEGC_MODE_ADDR, PEGC_BPPMODE_16c);
-	//outportb(PEGC_MODE_ADDR, 0x06);
-
-	// Graphics mode off
-	//outportb(PEGC_GDC_COMMAND_ADDR, GDC_COMMAND_STOP1);
-	
-	// Free DPMI mapping
-	//__dpmi_free_physical_address_mapping(&vram_dpmi);
 	
 	//  Clear anything we did to the screen
 	gfx_Clear();
@@ -104,18 +124,18 @@ void gfx_Clear(){
 
 void gfx_TextOn(){
 	// Text mode on
-	//outportb(0x62, GDC_COMMAND_START);
+	printf("%s.%d\t gfx_TextOn not implemented!\n", __FILE__, __LINE__);
 }
 
 void gfx_TextOff(){
 	// Text mode off
-	//outportb(0x62, GDC_COMMAND_STOP1);
+	printf("%s.%d\t gfx_TextOff not implemented!\n", __FILE__, __LINE__);
 }
 
 void gfx_Flip(){
 	// Copy a buffer of GFX_ROWS * GFX_COLS bytes to
 	// the active VRAM framebuffer for display.
-	
+	printf("%s.%d\t gfx_Flip not implemented!\n", __FILE__, __LINE__);
 	//movedata(_my_ds(), vram_buffer, vram_dpmi_selector, 0, (GFX_ROWS * GFX_COLS));
 }
 

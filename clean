@@ -1,0 +1,5 @@
+#!/bin/bash
+
+source /opt/toolchains/x86/watcom/owsetenv.sh
+rm -f -v obj/*
+rm -f -v launcher.exe
