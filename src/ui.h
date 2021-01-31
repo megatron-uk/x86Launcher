@@ -194,6 +194,7 @@ void	ui_Close();
 int		ui_DrawInfoBox();
 int		ui_DrawConfirmPopup(state_t *state, gamedata_t *gamedata, launchdat_t *launchdat);
 int		ui_DrawFilterPrePopup(state_t *state, int toggle);
+int		ui_DrawFilterPopup(state_t *state, int toggle);
 int		ui_DrawLaunchPopup(state_t *state, gamedata_t *gamedata, launchdat_t *launchdat, int toggle);
 int		ui_DrawMainWindow();
 int		ui_DrawSplash();

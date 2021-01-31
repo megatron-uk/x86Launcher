@@ -20,15 +20,21 @@
 #include <string.h>
 
 #include "data.h"
+#include "ui.h"
+
 #ifndef __HAS_GFX
 #include "gfx.h"
 #define __HAS_GFX
 #endif
-#include "palette.h"
-#include "ui.h"
+
 #ifndef __HAS_BMP
 #include "bmp.h"
 #define __HAS_BMP
+#endif
+
+#ifndef __HAS_PAL
+#include "palette.h"
+#define __HAS_PAL
 #endif
 
 // bmpdata_t structures are needed permanently for all ui 
@@ -74,7 +80,7 @@ void ui_Close(){
 	if (ui_assets_status == UI_ASSETS_LOADED){
 		bmp_Destroy(ui_checkbox_bmp);
 		bmp_Destroy(ui_checkbox_empty_bmp);
-		bmp_Destroy(ui_main_bmp);
+		//bmp_Destroy(ui_main_bmp);
 		bmp_Destroy(ui_list_bmp);
 		bmp_Destroy(ui_art_bmp);
 		bmp_Destroy(ui_title_bmp);
@@ -221,7 +227,7 @@ int ui_DrawFilterPrePopup(state_t *state, int toggle){
 	if (state->selected_filter >= FILTER_SERIES){
 		state->selected_filter = FILTER_SERIES;
 	}
-	if (state->selected_filter <= FILTER_NONE){
+	if (state->selected_filter < 1){
 		state->selected_filter = FILTER_NONE;
 	}
 	
@@ -277,8 +283,8 @@ int ui_DrawFilterPopup(state_t *state, int toggle){
 		state->selected_filter_string++;
 	}
 	
-	if (state->selected_filter_string < 0){
-		state->selected_filter_string = 0;
+	if (state->selected_filter_string < 1){
+		state->selected_filter_string = FILTER_NONE;
 	}
 	if (state->selected_filter_string > state->available_filter_strings){
 		state->selected_filter_string = state->available_filter_strings;
@@ -393,6 +399,7 @@ int	ui_DrawMainWindow(){
 	
 	// Initially, we can use a single solid bmp, with all of the ui elements on, but later as we overlay other things on top of it,
 	// we'll need to refresh various individual elements
+	
 	status = gfx_Bitmap(0, 0, ui_main_bmp);
 	if (status == 0){
 		return UI_OK;
@@ -566,6 +573,7 @@ int ui_LoadAssets(){
 	fclose(ui_asset_reader);
 	
 	// List window
+	/*
 	ui_ProgressMessage("Loading browser background ...");
 	gfx_Flip();
 	if (BMP_VERBOSE){
@@ -585,7 +593,8 @@ int ui_LoadAssets(){
 			return UI_ERR_BMP;
 	}
 	fclose(ui_asset_reader);
-	
+	*/
+	/*
 	// Art window
 	ui_ProgressMessage("Loading artwork background ...");
 	gfx_Flip();
@@ -606,7 +615,7 @@ int ui_LoadAssets(){
 			return UI_ERR_BMP;
 	}
 	fclose(ui_asset_reader);
-	
+	*/
 	// Game title bar
 	ui_ProgressMessage("Loading text entry (title) ...");
 	gfx_Flip();
@@ -690,7 +699,7 @@ int ui_LoadAssets(){
 			return UI_ERR_BMP;
 	}
 	fclose(ui_asset_reader);
-	
+	/*
 	// Game series bar
 	ui_ProgressMessage("Loading text entry (series) ...");
 	gfx_Flip();
@@ -711,7 +720,9 @@ int ui_LoadAssets(){
 			return UI_ERR_BMP;
 	}
 	fclose(ui_asset_reader);
+	*/
 	
+	/*
 	// Path bar
 	ui_ProgressMessage("Loading text entry (path) ...");
 	gfx_Flip();
@@ -732,6 +743,7 @@ int ui_LoadAssets(){
 			return UI_ERR_BMP;
 	}
 	fclose(ui_asset_reader);
+	*/
 	
 	// Set assets loaded status
 	ui_assets_status = UI_ASSETS_LOADED;

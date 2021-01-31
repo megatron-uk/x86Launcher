@@ -16,9 +16,11 @@
 */
 
 #include <stdio.h>
+#include <stdint.h>
 #include <limits.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 #include <dos.h>
 
 #include "gfx.h"
@@ -29,27 +31,38 @@
 #define __HAS_BMP
 #endif
 
-unsigned char	*vram;				// Pointer to a location in the local graphics buffer
-unsigned char	vram_buffer[256000]; // GFX_ROWS * GFX_COLS
+unsigned char	*vram;					// Pointer to a location in the local graphics buffer
+unsigned char	vram_buffer[VRAM_END]; 	// Our local memory graphics buffer, GFX_ROWS * GFX_COLS * GFX_PIXEL_SIZE
+long int window_x_max; 		// How many pixels wide a vesa memory window is
+long int window_y_max; 		// How many pixels deep a vesa memory window is
+long int vga_segment; 		// Base address of the current vesa memory window
+long int windows_in_use;		// Number of video memory windows needed to map our GFX_ROWS * GFX_COLS screen
+long int window_bytes;		// NUmber of bytes in a single vesa memory window (nominally 65536)
+unsigned char *VGA=(unsigned char *)0xA0000000L; // Position of the VGA memory region
 
 int gfx_Init(){
 	// Initialise graphics to a set of configured defaults
 	
 	int status;
+	double window_bytes_t;
 	vbeinfo_t *vbeinfo = NULL;
+	vesamodeinfo_t *vesamodeinfo = NULL;
+	
 	vbeinfo = (vbeinfo_t *) malloc(sizeof(vbeinfo_t));
+	vesamodeinfo = (vesamodeinfo_t *) malloc(sizeof(vesamodeinfo_t));
 	
 	if (GFX_VERBOSE){
 		printf("%s.%d\t Initalising gfx mode\n", __FILE__, __LINE__);	
 	}
 	
 	// Look for a VESA BIOS structure
-	status = vesa_getvbeinfo(vbeinfo);
+	status = vesa_GetVBEInfo(vbeinfo);
 	if (status < 0){
 		if (GFX_VERBOSE){
 			printf("%s.%d\t Error, Unable to complete gfx initialisation [VBE BIOS missing]\n", __FILE__, __LINE__);	
 		}
 		free(vbeinfo);
+		free(vesamodeinfo);
 		return -1;	
 	} else {	
 		if (GFX_VERBOSE){
@@ -58,12 +71,13 @@ int gfx_Init(){
 	}
 		
 	// Find mode GFX_VESA_DESIRED
-	status = vesa_hasmode(GFX_VESA_DESIRED, vbeinfo);
+	status = vesa_HasMode(GFX_VESA_DESIRED, vbeinfo);
 	if (status < 0){
 		if (GFX_VERBOSE){
 			printf("%s.%d\t Error, Unable to complete gfx initialisation [VESA mode missing]\n", __FILE__, __LINE__);	
 		}
 		free(vbeinfo);
+		free(vesamodeinfo);
 		return -1;	
 	} else {	
 		if (GFX_VERBOSE){
@@ -71,13 +85,29 @@ int gfx_Init(){
 		}
 	}
 	
+	// Load the mode information
+	status = vesa_GetModeInfo(GFX_VESA_DESIRED, vesamodeinfo);
+	if (status < 0){
+		if (GFX_VERBOSE){
+			printf("%s.%d\t Error, Unable to complete gfx initialisation [VESA mode lookup]\n", __FILE__, __LINE__);	
+		}
+		free(vbeinfo);
+		free(vesamodeinfo);
+		return -1;	
+	} else {	
+		if (GFX_VERBOSE){
+			printf("%s.%d\t Retrieved VESA mode details %xh\n", __FILE__, __LINE__, GFX_VESA_DESIRED);	
+		}
+	}
+	
 	// Set mode GFX_VESA_DESIRED
-	status = vesa_setmode(GFX_VESA_DESIRED);
+	status = vesa_SetMode(GFX_VESA_DESIRED);
 	if (status < 0){
 		if (GFX_VERBOSE){
 			printf("%s.%d\t Error, Unable to complete gfx initialisation [VESA set mode failed]\n", __FILE__, __LINE__);	
 		}
 		free(vbeinfo);
+		free(vesamodeinfo);
 		return -1;	
 	} else {	
 		if (GFX_VERBOSE){
@@ -85,11 +115,30 @@ int gfx_Init(){
 		}
 	}
 	
+	// We've set a new video mode, so recalculate
+	// the window_x_max and window_y_max values
+	// as well as derive the VGA segment address for
+	// the window and the number of bytes in a video window
+	vga_segment = vesamodeinfo->WinASegment;
+	window_bytes = (long int) vesamodeinfo->WinSize * 1024;
+	window_x_max = (window_bytes - 1) % GFX_COLS;
+	window_y_max = (window_bytes - 1) / GFX_COLS;
+	window_bytes_t = (double) ((long int) GFX_COLS * (long int) GFX_ROWS) / window_bytes;
+	windows_in_use = ceil(window_bytes_t);
+	
+	if (GFX_VERBOSE){
+		printf("%s.%d\t VESA memory window segment address: %xh\n", __FILE__, __LINE__, vga_segment);
+		printf("%s.%d\t VESA memory window size: %ld bytes (at %d bytes/pixel)\n", __FILE__, __LINE__, window_bytes, GFX_PIXEL_SIZE);
+		printf("%s.%d\t VESA memory window is: %ld\n", __FILE__, __LINE__, window_x_max);
+		printf("%s.%d\t VESA memory window rows: %ld\n", __FILE__, __LINE__, window_y_max);
+		printf("%s.%d\t VESA memory windows needed: %ld\n", __FILE__, __LINE__, windows_in_use);
+	}
+	
 	gfx_Clear();
 	gfx_Flip();
 	
 	free(vbeinfo);
-	
+	free(vesamodeinfo);
 	return 0;
 }
         
@@ -117,9 +166,12 @@ int gfx_Close(){
 
 void gfx_Clear(){
 	
-	// Set local vram_buffer to empty
-	memset(vram_buffer, 0, (GFX_ROW_SIZE * GFX_COL_SIZE));
+	if (GFX_VERBOSE){
+		printf("%s.%d\t Setting %ld pixels\n", __FILE__, __LINE__, sizeof(vram_buffer));	
+	}
 	
+	// Set local vram_buffer to empty
+	memset(vram_buffer, 0, sizeof(vram_buffer));
 }
 
 void gfx_TextOn(){
@@ -135,26 +187,56 @@ void gfx_TextOff(){
 void gfx_Flip(){
 	// Copy a buffer of GFX_ROWS * GFX_COLS bytes to
 	// the active VRAM framebuffer for display.
-	printf("%s.%d\t gfx_Flip not implemented!\n", __FILE__, __LINE__);
-	//movedata(_my_ds(), vram_buffer, vram_dpmi_selector, 0, (GFX_ROWS * GFX_COLS));
+	
+	unsigned short int window;
+	
+	// Set the vram pointer to the start of the buffer
+	vram = vram_buffer;
+	
+	// for each window in the number of windows for this video mode
+	for(window = 0; window < windows_in_use; window++ ){
+
+		//if (GFX_VERBOSE){
+		//	printf("%s.%d\t Copying %ld bytes from buffer to window %d\n", __FILE__, __LINE__, window_bytes, window);	
+		//}
+		
+		// set new window to be active
+		vesa_SetWindow(window);
+		
+		// copy the block of pixels for this memory window
+		_fmemcpy(VGA, vram, window_bytes - 1);
+		
+		// Increment the pointer to the vram buffer by the size of one video window
+		vram += window_bytes - 1;
+	};
+	
+	// Reset vram buffer pointer position
+	vram = vram_buffer;
 }
 
-int gfx_GetXYaddr(int x, int y){
+long int gfx_GetXYaddr(unsigned short int x, unsigned short int y){
 	// Turn a screen x/y coordinate into an offset into a vram buffer
 	
-	unsigned int addr;
-	unsigned short row;
-	
-	addr = 0x00;
-	addr += GFX_ROW_SIZE * y;
+	long int addr;
+		
+	addr = VRAM_START;
+	addr += (GFX_ROW_SIZE * y);
 	addr += (x * GFX_PIXEL_SIZE);
 	
 	if ((VRAM_START + addr) > VRAM_END){
 		if (GFX_VERBOSE){
-			printf("%s.%d\t XY coords beyond VRAM address range\n", __FILE__, __LINE__);
+			printf("%s.%d\t XY coords beyond VRAM buffer end [ %d > %d]\n", __FILE__, __LINE__, addr, VRAM_END);
 		}
 		return -1;
 	}
+	
+	if (addr < VRAM_START){
+		if (GFX_VERBOSE){
+			printf("%s.%d\t XY coords before VRAM buffer start [ %d < %d]\n", __FILE__, __LINE__, addr, VRAM_START);
+		}
+		return -1;
+	}
+	
 	return addr;
 }
 
@@ -165,13 +247,13 @@ int gfx_Bitmap(int x, int y, bmpdata_t *bmpdata){
 	//
 	// Bitmaps wider or taller than the screen are UNSUPPORTED
 	
-	int row, col;			//  x and y position counters
-	int start_addr;		// The first pixel
+	int row, col;		//  x and y position counters
+	long int start_addr;	// The first pixel
 	int width_bytes;		// Number of bytes in one row of the image
-	int skip_cols;			// Skip first or last pixels of a row if the image is partially offscreen
+	int skip_cols;		// Skip first or last pixels of a row if the image is partially offscreen
 	int skip_bytes;
 	int skip_rows;		// Skip this number of rows if the image is patially offscreen
-	int total_rows	;		// Total number of rows to read in clip mode
+	int total_rows;		// Total number of rows to read in clip mode
 	unsigned char *ptr;	// Pointer to current location in bmp pixel buffer
 	
 	if (x < 0){
@@ -209,7 +291,7 @@ int gfx_Bitmap(int x, int y, bmpdata_t *bmpdata){
 		start_addr = gfx_GetXYaddr(x, y);
 		if (start_addr < 0){
 			if (GFX_VERBOSE){
-				printf("%s.%d\t Unable to set VRAM buffer start address\n", __FILE__, __LINE__);
+				printf("%s.%d\t Unable to set VRAM buffer start address [%ld]\n", __FILE__, __LINE__, start_addr);
 			}
 			return -1;
 		}
@@ -292,7 +374,7 @@ int gfx_Bitmap(int x, int y, bmpdata_t *bmpdata){
 int gfx_Box(int x1, int y1, int x2, int y2, unsigned char palette){
         // Draw a box outline with a given palette entry colour
         int row, col;		//  x and y position counters
-        int start_addr; 	// The first pixel, at x1,y1
+        long int start_addr; 	// The first pixel, at x1,y1
         int temp;		// Holds either x or y, if we need to flip them
         int step;
         
@@ -320,7 +402,7 @@ int gfx_Box(int x1, int y1, int x2, int y2, unsigned char palette){
         start_addr = gfx_GetXYaddr(x1, y1);
         if (start_addr < 0){
                 if (GFX_VERBOSE){
-                        printf("%s.%d\t Unable to set VRAM start address\n", __FILE__, __LINE__);
+                        printf("%s.%d\t Unable to set VRAM buffer start address\n", __FILE__, __LINE__);
                 }
                 return -1;
         }
@@ -360,7 +442,7 @@ int gfx_Box(int x1, int y1, int x2, int y2, unsigned char palette){
 int gfx_BoxFill(int x1, int y1, int x2, int y2, unsigned char palette){
         // Draw a box, fill it with a given palette entry
         int row, col;		//  x and y position counters
-        int start_addr;	// The first pixel, at x1,y1
+        long int start_addr;	// The first pixel, at x1,y1
         int temp;		// Holds either x or y, if we need to flip them
         int step;
         
@@ -388,7 +470,7 @@ int gfx_BoxFill(int x1, int y1, int x2, int y2, unsigned char palette){
         start_addr = gfx_GetXYaddr(x1, y1);
         if (start_addr < 0){
                 if (GFX_VERBOSE){
-                        printf("%s.%d\t Unable to set VRAM start address\n", __FILE__, __LINE__);
+                        printf("%s.%d\t Unable to set VRAM buffer start address\n", __FILE__, __LINE__);
                 }
                 return -1;
         }
@@ -415,7 +497,7 @@ int gfx_BoxFillTranslucent(int x1, int y1, int x2, int y2, unsigned char palette
         // it looks semi-transparent.
         
         int row, col;	// x and y position counters
-        int start_addr;	// The first pixel, at x1,y1
+        long int start_addr;	// The first pixel, at x1,y1
         int temp;		// Holds either x or y, if we need to flip them
         int step;
         int flip;		// toggles display of every other pixel on/off
@@ -444,7 +526,7 @@ int gfx_BoxFillTranslucent(int x1, int y1, int x2, int y2, unsigned char palette
         start_addr = gfx_GetXYaddr(x1, y1);
         if (start_addr < 0){
                 if (GFX_VERBOSE){
-                        printf("%s.%d\t Unable to set VRAM start address\n", __FILE__, __LINE__);
+                        printf("%s.%d\t Unable to set VRAM buffer start address\n", __FILE__, __LINE__);
                 }
                 return -1;
         }
@@ -480,11 +562,11 @@ int gfx_Puts(int x, int y, fontdata_t *fontdata, char *c){
 	
 	unsigned int	start_offset;
 	unsigned int	row_offset;
-	unsigned char	font_symbol;
-	unsigned char	font_row;
-	unsigned char	i, w;
-	unsigned char	pos;
-	unsigned char	*src, *dst;
+	unsigned char font_symbol;
+	unsigned char font_row;
+	unsigned char i, w;
+	unsigned char pos;
+	unsigned char *src, *dst;
 	
 	// Empty string
 	if (strlen(c) < 1){
@@ -495,7 +577,7 @@ int gfx_Puts(int x, int y, fontdata_t *fontdata, char *c){
 	start_offset = gfx_GetXYaddr(x, y);
 	if (start_offset < 0){
 		if (GFX_VERBOSE){
-			printf("%s.%d\t Unable to set VRAM start offset\n", __FILE__, __LINE__);
+			printf("%s.%d\t Unable to set VRAM buffer start address\n", __FILE__, __LINE__);
 		}
 		return -1;
 	}
@@ -504,7 +586,7 @@ int gfx_Puts(int x, int y, fontdata_t *fontdata, char *c){
 	vram = vram_buffer + start_offset;
 	
 	if (GFX_VERBOSE){
-		printf("%s.%d\t Displaying string: [%s] at vram offset 0x%x\n", __FILE__, __LINE__, c, vram);
+		printf("%s.%d\t Displaying string: [%s] at vram offset %d\n", __FILE__, __LINE__, c, vram);
 		printf("%s.%d\t Displaying string: [%s] at screen co-ords %d,%d\n", __FILE__, __LINE__, c, x, y);
 	}
 		

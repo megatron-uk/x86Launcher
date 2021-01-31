@@ -20,14 +20,14 @@
 #define __HAS_BMP
 #endif
 
-#define GFX_VERBOSE		0			// Turn on/off gfx-specific debug output
+#define GFX_VERBOSE		1			// Turn on/off gfx-specific debug output
 #define GFX_VESA_DESIRED	0x100		// The default VESA mode we want
 #define GFX_BPP			8			// Colour depth that we want
 #define GFX_BITPLANES	1			// The number of bitplanes we want
 #define GFX_ROWS			400			// NUmbe of pixels in a row
 #define GFX_COLS			640			// Number of pixels in a column
-#define GFX_ROW_SIZE		GFX_COLS 	// NUmber of bytes in a row (pixels per row * 2)
-#define GFX_COL_SIZE 	GFX_ROWS		// NUmber of bytes in a column
+#define GFX_ROW_SIZE		640		 	// NUmber of bytes in a row (pixels per row * bytes per pixel)
+#define GFX_COL_SIZE 	400			// NUmber of bytes in a column
 #define GFX_PIXEL_SIZE	1			// 1 byte per pixel
 
 #define RGB_BLACK		0x0000		// Simple RGB definition for a black 16bit pixel (5551 representation?)
@@ -38,22 +38,22 @@
 #define GFX_TEXT_OK           		-252 // Output of text data ok
 #define GFX_TEXT_INVALID      		-251 // Attempted output of an unsupported font glyph (too wide, too heigh, etc)
 
-#define VRAM_START					0
-#define VRAM_END						256000
+#define VRAM_START					0		// Relative start offset into the local memory buffer
+#define VRAM_END						256000	// End of the local memory buffer, should be GFX_ROWS * GFX_COLS * GFX_PIXEL_SIZE
 
 /* **************************** */
 /* Function prototypes */
 /* **************************** */
 
-int		gfx_Bitmap(int x, int y, bmpdata_t *bmpdata);
-int 		gfx_Box(int x1, int y1, int x2, int y2, unsigned char palette);
-int 		gfx_BoxFill(int x1, int y1, int x2, int y2, unsigned char palette);
-int		gfx_BoxFillTranslucent(int x1, int y1, int x2, int y2, unsigned char palette);
-void		gfx_Clear();
-int		gfx_Close();
-void		gfx_Flip();
-int		gfx_GetXYaddr(int x, int y);
-int		gfx_Init();
-int 		gfx_Puts(int x, int y, fontdata_t *fontdata, char *c);
-void		gfx_TextOff();
-void		gfx_TextOn();
+int			gfx_Bitmap(int x, int y, bmpdata_t *bmpdata);
+int 			gfx_Box(int x1, int y1, int x2, int y2, unsigned char palette);
+int 			gfx_BoxFill(int x1, int y1, int x2, int y2, unsigned char palette);
+int			gfx_BoxFillTranslucent(int x1, int y1, int x2, int y2, unsigned char palette);
+void			gfx_Clear();
+int			gfx_Close();
+void			gfx_Flip();
+long int		gfx_GetXYaddr(unsigned short int x, unsigned short int y);
+int			gfx_Init();
+int 			gfx_Puts(int x, int y, fontdata_t *fontdata, char *c);
+void			gfx_TextOff();
+void			gfx_TextOn();

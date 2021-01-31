@@ -167,6 +167,8 @@ int findDirs(char *path, gamedata_t *gamedata, int startnum, config_t *config){
 	/* initialise counters */
 	go = 1;
 	found = 0;
+	drive = 0;
+	old_drive = 0;
 	
 	/* initialise the directory or search dirname buffer */
 	memset(old_dir_buffer, '\0', sizeof(old_dir_buffer));
@@ -183,7 +185,7 @@ int findDirs(char *path, gamedata_t *gamedata, int startnum, config_t *config){
 	
 	/* save curdrive */
 	_dos_getdrive(&old_drive);
-	if (old_drive < 0){
+	if (old_drive == 0){
 		printf("%s.%d\t Unable to save current drive [status:%d]\n", __FILE__, __LINE__, old_drive);
 		return -1;
 	}

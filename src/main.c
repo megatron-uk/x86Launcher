@@ -18,28 +18,38 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <conio.h>
+#include <i86.h>
 
 #ifndef __HAS_DATA
 #include "data.h"
 #define __HAS_DATA
 #endif
-#include "fstools.h"
-#include "filter.h"
+
 #ifndef __HAS_GFX
 #include "gfx.h"
 #define __HAS_GFX
 #endif
-#include "input.h"
-#include "palette.h"
-#include "ui.h"
+
 #ifndef __HAS_BMP
 #include "bmp.h"
 #define __HAS_BMP
 #endif
+
 #ifndef __HAS_MAIN
 #include "main.h"
 #define __HAS_MAIN
 #endif
+
+#ifndef __HAS_PAL
+#include "palette.h"
+#define __HAS_PAL
+#endif
+
+#include "input.h"
+#include "ui.h"
+#include "fstools.h"
+#include "filter.h"
 
 int main() {
 	/* Lets get this show on the road!!! */
@@ -130,12 +140,12 @@ int main() {
 	state->selected_gameid = -1;		// Current selected game
 	state->has_images = 0;			
 	state->has_launchdat = 0;
-	state->selected_filter = 0;
+	state->selected_filter = FILTER_NONE;
 	state->selected_start = 0;
 	state->selected_filter_string = 0;
 	state->active_pane = BROWSER_PANE;
 	for(i =0; i <SELECTION_LIST_SIZE; i++){
-		state->selected_list[i] = NULL;
+		state->selected_list[i] = -1;
 	}
 	
 	/* ************************************** */
@@ -212,6 +222,7 @@ int main() {
 	} else {
 		printf("%s.%d\t Valid graphics mode found\n", __FILE__, __LINE__);	
 	}
+	getch();
 	
 	// Do basic UI initialisation
 	ui_Init();	
@@ -225,7 +236,7 @@ int main() {
 	ui_DrawSplashProgress(1, progress);
 	gfx_Flip();
 	
-	return 0;
+	getch();
 	
 	// ======================
 	// Load UI font data
@@ -242,7 +253,8 @@ int main() {
 	ui_DrawSplashProgress(0, progress);
 	gfx_Flip();
 	
-
+	getch();
+	
 	// ======================
 	// Load UI asset data
 	// ======================
@@ -258,7 +270,10 @@ int main() {
 	progress += splash_progress_chunk_size;
 	ui_DrawSplashProgress(0, progress);
 	gfx_Flip();
-	sleep(1);
+	delay(1000);
+	
+	getch();
+
 	
 	// ======================
 	// Apply any settings from the config file
@@ -302,6 +317,7 @@ int main() {
 	ui_ProgressMessage("Configuration applied!");
 	gfx_Flip();
 	
+	getch();
 	
 	// ======================
 	//
@@ -345,6 +361,7 @@ int main() {
 	ui_ProgressMessage("Scraped!");
 	gfx_Flip();
 	
+	return 0;
 	
 	// ========================
 	//
@@ -422,7 +439,7 @@ int main() {
 			gfx_Flip();
 			
 			savefile = fopen(SAVEFILE, "w");
-			if (savefile < 0){
+			if (savefile == NULL){
 					sprintf(msg, "Warning: Unable to create save file. Press any key.");
 					ui_ProgressMessage(msg);
 					getch();
@@ -434,7 +451,7 @@ int main() {
 							gamedata = gamedata->next;
 					}
 					gamedata = gamedata_head;
-					close(savefile);
+					fclose(savefile);
 			}
 	} else {
 			ui_ProgressMessage("Not saving game list...");
@@ -449,7 +466,7 @@ int main() {
 	// ======================
 	ui_ProgressMessage("Waiting to load main UI...");
 	gfx_Flip();
-	sleep(1);
+	delay(1000);
 		
 	// Also turn any command line text mode off at this point
 	if (config->verbose != 1){

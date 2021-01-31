@@ -17,12 +17,20 @@
 */
 
 #include <stdio.h>
+#include <conio.h>
 
 #ifndef __HAS_BMP
 #include "bmp.h"
 #define __HAS_BMP
 #endif
+
+#ifndef __HAS_PAL
 #include "palette.h"
+#define __HAS_PAL
+#endif
+
+unsigned int free_palettes_used;			// Current number of palette entries used
+unsigned int reserved_palettes_used;		// Current number of palette entries used
 
 int pal_BMP2Palette(bmpdata_t *bmpdata, int reserved){
 	// Set palette entries based on a specific bmpdata structure
@@ -142,12 +150,12 @@ void pal_ResetAll(){
 		printf("%s.%d\t Resetting all palette entries\n", __FILE__, __LINE__);		
 	}
 	
-	//for (i = 0; i < 256; i++){
-	//	outportb(PEGC_PALLETE_SEL_ADDR, i);
-	//	outportb(PEGC_RED_ADDR, 0x0);
-	//	outportb(PEGC_GREEN_ADDR, 0x0);
-	//	outportb(PEGC_BLUE_ADDR, 0x0);	
-	//}
+	for (i = 0; i < 256; i++){
+		outp(VGA_PALLETE_SEL_ADDR, i);
+		outp(VGA_PALLETE_SET_ADDR, 0x0);
+		outp(VGA_PALLETE_SET_ADDR, 0x0);
+		outp(VGA_PALLETE_SET_ADDR, 0x0);	
+	}
 	
 	reserved_palettes_used = 0;
 	free_palettes_used = 0;
@@ -164,12 +172,12 @@ void pal_ResetFree(){
 		printf("%s.%d\t Resetting free palette entries range (0-%d)\n", __FILE__, __LINE__, PALETTES_FREE);		
 	}
 	
-	//for (i = 0; i < PALETTES_FREE; i++){
-	//	outportb(PEGC_PALLETE_SEL_ADDR, i);
-	//	outportb(PEGC_RED_ADDR, 0x0);
-	//	outportb(PEGC_GREEN_ADDR, 0x0);
-	//	outportb(PEGC_BLUE_ADDR, 0x0);	
-	//}
+	for (i = 0; i < PALETTES_FREE; i++){
+		outp(VGA_PALLETE_SEL_ADDR, i);
+		outp(VGA_PALLETE_SET_ADDR, 0x0);
+		outp(VGA_PALLETE_SET_ADDR, 0x0);
+		outp(VGA_PALLETE_SET_ADDR, 0x0);	
+	}
 	
 	free_palettes_used = 0;
 	
@@ -182,10 +190,10 @@ void pal_Set(unsigned char idx, unsigned char r, unsigned char g, unsigned char 
 		printf("%s.%d\t Set palette #%3d r:%3d g:%3d b:%3d\n", __FILE__, __LINE__, idx, r, g, b);
 	}
 	
-	//outportb(PEGC_PALLETE_SEL_ADDR, idx);
-	//outportb(PEGC_RED_ADDR, r);
-	//outportb(PEGC_GREEN_ADDR, g);
-	//outportb(PEGC_BLUE_ADDR, b);
+	outp(VGA_PALLETE_SEL_ADDR, idx);
+	outp(VGA_PALLETE_SET_ADDR, r);
+	outp(VGA_PALLETE_SET_ADDR, g);
+	outp(VGA_PALLETE_SET_ADDR, b);
 	
 	return;
 }

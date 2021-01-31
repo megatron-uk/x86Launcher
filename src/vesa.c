@@ -22,24 +22,7 @@
 
 #include "vesa.h"
 
-//void vesa_getmodeinfo(unsigned short mode, VBE_ModeInfo *modeinfo){
-	// Originally defined in:
-	// http://www.geocities.com/siliconvalley/horizon/6933/vesa.txt
-	// ... but is for 32bit protected mode. We need a 16bit real-mode version.
-	
-//	__dpmi_regs regs;
-	
-//	assert(sizeof(*modeinfo) < _go32_info_block.size_of_transfer_buffer);
-//	regs.x.ax = 0x4F01;
-//	regs.x.cx = mode;
-//	regs.x.di = __tb & 0x0F;
-//	regs.x.es = (__tb >> 4) & 0xFFFF;
-//	__dpmi_int(0x10, &regs);
-//	dosmemget(__tb, sizeof(*modeinfo), modeinfo);
-//	return;
-//}
-
-int vesa_getmodeinfo(unsigned short mode, vesamodeinfo_t *modeinfo){
+int vesa_GetModeInfo(unsigned short mode, vesamodeinfo_t *modeinfo){
 	// Retrieve info on a particular VESA mode
 	
 	union REGS r;
@@ -64,21 +47,21 @@ int vesa_getmodeinfo(unsigned short mode, vesamodeinfo_t *modeinfo){
 		// VESA BIOS call was not successful
 		if (VESA_VERBOSE){
 			printf("%s.%d\t Error, Unable to query VESA mode [return code 0x%04x]\n", __FILE__, __LINE__, r.x.ax);
-			vesa_printvbemodeinfo(modeinfo);
+			vesa_PrintVBEModeInfo(modeinfo);
 		}
 		return -1;	
 	}
 	
 	// Process VESA mode info structure data
-	if (VESA_VERBOSE){
+	if (VESA_VERBOSE > 1){
 		printf("%s.%d\t VESA mode queried successfully!\n", __FILE__, __LINE__);
-		vesa_printvbemodeinfo(modeinfo);
+		vesa_PrintVBEModeInfo(modeinfo);
 	}
 	
 	return 0;
 }
 
-int vesa_getvbeinfo(vbeinfo_t *vbeinfo){
+int vesa_GetVBEInfo(vbeinfo_t *vbeinfo){
 	// Retrieve basic VESA BIOS information
 	
 	union REGS r;
@@ -105,14 +88,16 @@ int vesa_getvbeinfo(vbeinfo_t *vbeinfo){
 	// Process VESA mode info structure data
 	if (VESA_VERBOSE){
 		printf("%s.%d\t VESA BIOS queried successfully!\n", __FILE__, __LINE__);
-		vesa_printvbeinfo(vbeinfo);
-		vesa_printvbemodes(vbeinfo);
+		if (VESA_VERBOSE > 1){
+			vesa_PrintVBEInfo(vbeinfo);
+			vesa_PrintVBEModes(vbeinfo);
+		}
 	}
 		
 	return 0;	
 }
 
-int vesa_hasmode(unsigned short int mode, vbeinfo_t *vbeinfo){
+int vesa_HasMode(unsigned short int mode, vbeinfo_t *vbeinfo){
 	// Finds if a given VESA mode is present (and supported)
 	// by the current video adapter
 	
@@ -133,7 +118,7 @@ int vesa_hasmode(unsigned short int mode, vbeinfo_t *vbeinfo){
 	}
 	
 	if (found){
-		vesa_getmodeinfo(mode, modeinfo);
+		vesa_GetModeInfo(mode, modeinfo);
 		if (modeinfo->ModeAttributes != 0){
 			// Mode present and available
 			free(modeinfo);
@@ -151,7 +136,7 @@ int vesa_hasmode(unsigned short int mode, vbeinfo_t *vbeinfo){
 	
 }
 
-int vesa_setmode(unsigned short int mode){
+int vesa_SetMode(unsigned short int mode){
 	// Initialise the video hardware at a given VESA mode
 	
 	union REGS r;
@@ -179,7 +164,7 @@ int vesa_setmode(unsigned short int mode){
 	return 0;
 }
 
-int vesa_setwindow(unsigned short int window, unsigned short int position){
+int vesa_SetWindow(unsigned short int position){
 	// Set the current active video memory window (since VGA graphics operates in 64KB windows)
 	
 	union REGS r;
@@ -187,21 +172,26 @@ int vesa_setwindow(unsigned short int window, unsigned short int position){
 	
 	r.x.ax = VESA_WINDOW_SET;
 	r.h.bh = 0;
-	r.h.bl = window;
+	r.h.bl = 0;
 	r.x.dx = position;
 	int86(VESA_INTERRUPT, &r, &r);
 	
 	if (r.x.ax != VESA_BIOS_SUCCESS){
 		// VESA BIOS call was not successful
 		if (VESA_VERBOSE){
-			printf("%s.%d\t Error, Unable to set set VESA memory region window %d, position %d [return code 0x%04x]\n", __FILE__, __LINE__, window, position, r.x.ax);
+			printf("%s.%d\t Error, Unable to set set VESA memory region window to position %d [return code 0x%04x]\n", __FILE__, __LINE__, position, r.x.ax);
 		}
 		return -1;	
 	}
+	
+	if (VESA_VERBOSE){
+		printf("%s.%d\t Successfully set VESA window %d\n", __FILE__, __LINE__, position);
+	}
+	
 	return 0;
 }
 
-void vesa_printvbeinfo(vbeinfo_t *vbeinfo){
+void vesa_PrintVBEInfo(vbeinfo_t *vbeinfo){
 	// Print the current contents of the vbeinfo structure
 	
 	printf("%s.%d\t VESA BIOS information follows\n", __FILE__, __LINE__);
@@ -217,7 +207,7 @@ void vesa_printvbeinfo(vbeinfo_t *vbeinfo){
 	printf("----------\n");
 }
 
-void vesa_printvbemodes(vbeinfo_t *vbeinfo){
+void vesa_PrintVBEModes(vbeinfo_t *vbeinfo){
 	// Print all the mode numbers defined by 
 	// the current of the vbeinfo structure
 	
@@ -237,7 +227,7 @@ void vesa_printvbemodes(vbeinfo_t *vbeinfo){
 	printf("----------\n");
 }
 
-void vesa_printvbemodeinfo(vesamodeinfo_t *modeinfo){
+void vesa_PrintVBEModeInfo(vesamodeinfo_t *modeinfo){
 	// Given a valid modeinfo structure, print the details
 	// of that VESA mode
 	

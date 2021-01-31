@@ -15,7 +15,7 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#define VESA_VERBOSE			1		// Enable/disable debug output for this module at compile time.
+#define VESA_VERBOSE			0		// Enable/disable debug output for this module at compile time.
 #define VESA_INTERRUPT		0x10
 #define VESA_BIOS_INFO		0x4F00	// The function number to call INT10 on to return VBE info
 #define VESA_MODE_INFO		0x4F01	// The function number to call INT10 on to retrieve information on a specific VBE mode
@@ -82,11 +82,11 @@ typedef struct vbeinfo_t {
 	char  				misc_data[512];
 } vbeinfo_t;
 
-int 		vesa_getmodeinfo(unsigned short mode, vesamodeinfo_t *modeinfo);
-int 		vesa_getvbeinfo(vbeinfo_t *vbeinfo);
-int		vesa_hasmode(unsigned short mode, vbeinfo_t *vbeinfo);
-int 		vesa_setmode(unsigned short int mode);
-int 		vesa_setwindow(unsigned short int window, unsigned short int position);
-void 	vesa_printvbeinfo(vbeinfo_t *vbeinfo);
-void 	vesa_printvbemodes(vbeinfo_t *vbeinfo);
-void 	vesa_printvbemodeinfo(vesamodeinfo_t *modeinfo);
+int 		vesa_GetModeInfo(unsigned short mode, vesamodeinfo_t *modeinfo);
+int 		vesa_GetVBEInfo(vbeinfo_t *vbeinfo);
+int		vesa_HasMode(unsigned short mode, vbeinfo_t *vbeinfo);
+int 		vesa_SetMode(unsigned short int mode);
+int 		vesa_SetWindow(unsigned short int position);
+void 	vesa_PrintVBEInfo(vbeinfo_t *vbeinfo);
+void 	vesa_PrintVBEModes(vbeinfo_t *vbeinfo);
+void 	vesa_PrintVBEModeInfo(vesamodeinfo_t *modeinfo);
