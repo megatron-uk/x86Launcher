@@ -31,8 +31,8 @@
 #define __HAS_BMP
 #endif
 
-unsigned char	*vram;					// Pointer to a location in the local graphics buffer
-unsigned char	vram_buffer[VRAM_END]; 	// Our local memory graphics buffer, GFX_ROWS * GFX_COLS * GFX_PIXEL_SIZE
+unsigned char __huge	*vram;					// Pointer to a location in the local graphics buffer
+unsigned char __huge	vram_buffer[VRAM_END]; 	// Our local memory graphics buffer, GFX_ROWS * GFX_COLS * GFX_PIXEL_SIZE
 long int window_x_max; 		// How many pixels wide a vesa memory window is
 long int window_y_max; 		// How many pixels deep a vesa memory window is
 long int vga_segment; 		// Base address of the current vesa memory window
@@ -166,12 +166,16 @@ int gfx_Close(){
 
 void gfx_Clear(){
 	
+	long int i;
+	unsigned short int c;
+	
 	if (GFX_VERBOSE){
 		printf("%s.%d\t Setting %ld pixels\n", __FILE__, __LINE__, sizeof(vram_buffer));	
 	}
 	
 	// Set local vram_buffer to empty
 	memset(vram_buffer, 0, sizeof(vram_buffer));
+	
 }
 
 void gfx_TextOn(){
@@ -189,25 +193,36 @@ void gfx_Flip(){
 	// the active VRAM framebuffer for display.
 	
 	unsigned short int window;
+	long int left;
 	
 	// Set the vram pointer to the start of the buffer
 	vram = vram_buffer;
 	
+	left = (long int) VRAM_END;
+	
 	// for each window in the number of windows for this video mode
 	for(window = 0; window < windows_in_use; window++ ){
-
-		//if (GFX_VERBOSE){
-		//	printf("%s.%d\t Copying %ld bytes from buffer to window %d\n", __FILE__, __LINE__, window_bytes, window);	
-		//}
 		
 		// set new window to be active
 		vesa_SetWindow(window);
 		
 		// copy the block of pixels for this memory window
-		_fmemcpy(VGA, vram, window_bytes - 1);
+		if (left > window_bytes){
+			if (GFX_VERBOSE){
+				printf("%s.%d\t Copying %ld bytes to window %d\n", __FILE__, __LINE__, window_bytes, window);
+			}
+			_fmemcpy(VGA, vram, window_bytes - 1);
+			
+			left -= window_bytes;
+		} else {
+			if (GFX_VERBOSE){
+				printf("%s.%d\t Copying remaining %ld bytes to window %d\n", __FILE__, __LINE__, left, window);
+			}
+			_fmemcpy(VGA, vram, left);
+		}
 		
 		// Increment the pointer to the vram buffer by the size of one video window
-		vram += window_bytes - 1;
+		vram += (long int) (window_bytes);
 	};
 	
 	// Reset vram buffer pointer position
@@ -219,8 +234,8 @@ long int gfx_GetXYaddr(unsigned short int x, unsigned short int y){
 	
 	long int addr;
 		
-	addr = VRAM_START;
-	addr += (GFX_ROW_SIZE * y);
+	addr = (long int) VRAM_START;
+	addr += (long int) GFX_ROW_SIZE * (long int) y;
 	addr += (x * GFX_PIXEL_SIZE);
 	
 	if ((VRAM_START + addr) > VRAM_END){
@@ -254,10 +269,14 @@ int gfx_Bitmap(int x, int y, bmpdata_t *bmpdata){
 	int skip_bytes;
 	int skip_rows;		// Skip this number of rows if the image is patially offscreen
 	int total_rows;		// Total number of rows to read in clip mode
-	unsigned char *ptr;	// Pointer to current location in bmp pixel buffer
+	unsigned char __huge *ptr;	// Pointer to current location in bmp pixel buffer
 	
+	if (GFX_VERBOSE){
+		printf("%s.%d\t Placing bitmap at X:%d Y:%d\n", __FILE__, __LINE__, x, y);
+	}
+	
+	// Negative X values start offscreen at the left
 	if (x < 0){
-		// Negative values start offscreen at the left
 		skip_cols = x;
 	} else {
 		if ((x + bmpdata->width) > GFX_COLS){
@@ -269,8 +288,8 @@ int gfx_Bitmap(int x, int y, bmpdata_t *bmpdata){
 		}
 	}
 	
+	// Negative Y values start off the top of the screen
 	if (y < 0){
-		// Negative values start off the top of the screen
 		skip_rows = y;
 	} else {
 		if ((y + bmpdata->height) > GFX_ROWS){
@@ -291,12 +310,17 @@ int gfx_Bitmap(int x, int y, bmpdata_t *bmpdata){
 		start_addr = gfx_GetXYaddr(x, y);
 		if (start_addr < 0){
 			if (GFX_VERBOSE){
-				printf("%s.%d\t Unable to set VRAM buffer start address [%ld]\n", __FILE__, __LINE__, start_addr);
+				printf("%s.%d\t Unable to set VRAM buffer start address [%d]\n", __FILE__, __LINE__, start_addr);
 			}
 			return -1;
 		}
 		// Set starting pixel address
-		vram = vram_buffer + start_addr;
+		vram = vram_buffer;
+		vram += start_addr;
+		
+		if (GFX_VERBOSE){
+			printf("%s.%d\t Bitmap starting location: %p\n", __FILE__, __LINE__, vram);
+		}
 		
 		// memcpy entire rows at a time
 		ptr = (unsigned char*) bmpdata->pixels; 
@@ -304,10 +328,13 @@ int gfx_Bitmap(int x, int y, bmpdata_t *bmpdata){
 			memcpy(vram, ptr, width_bytes);
 			
 			// Go to next row in vram_buffer
-			vram += GFX_COLS;
+			vram += (long int) GFX_COLS;
 			
 			// Increment point
 			ptr += bmpdata->width;
+		}
+		if (GFX_VERBOSE){
+			printf("%s.%d\t Bitmap copied without cropping\n", __FILE__, __LINE__);
 		}
 		return 0;
 		
@@ -365,6 +392,9 @@ int gfx_Bitmap(int x, int y, bmpdata_t *bmpdata){
 			vram += GFX_COLS;
 			// Increment pointer to next row in pixel buffer
 			ptr += bmpdata->width;
+		}
+		if (GFX_VERBOSE){
+			printf("%s.%d\t Bitmap copied with cropping\n", __FILE__, __LINE__);
 		}
 		return 0;
 	}
@@ -560,8 +590,8 @@ int gfx_Puts(int x, int y, fontdata_t *fontdata, char *c){
 	//
 	// Note: We only support 8px and 16px wide fonts.
 	
-	unsigned int	start_offset;
-	unsigned int	row_offset;
+	long int	start_offset;
+	long int	row_offset;
 	unsigned char font_symbol;
 	unsigned char font_row;
 	unsigned char i, w;

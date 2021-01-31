@@ -21,7 +21,7 @@
 #define __HAS_BMP
 #endif
 
-#define PALETTE_VERBOSE			0
+#define PALETTE_VERBOSE			1
 #define PALETTES_TOTAL			256 // Total number of palette entries
 #define PALETTES_RESERVED		32	// Used by the UI bitmap resources
 #define PALETTES_UI				16	// Free to be used by gfx primitives etc

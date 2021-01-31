@@ -222,7 +222,6 @@ int main() {
 	} else {
 		printf("%s.%d\t Valid graphics mode found\n", __FILE__, __LINE__);	
 	}
-	getch();
 	
 	// Do basic UI initialisation
 	ui_Init();	
@@ -233,10 +232,9 @@ int main() {
 		gfx_Close();
 		return status;	
 	}
+	gfx_Flip();
 	ui_DrawSplashProgress(1, progress);
 	gfx_Flip();
-	
-	getch();
 	
 	// ======================
 	// Load UI font data
@@ -252,9 +250,7 @@ int main() {
 	progress += splash_progress_chunk_size;
 	ui_DrawSplashProgress(0, progress);
 	gfx_Flip();
-	
-	getch();
-	
+		
 	// ======================
 	// Load UI asset data
 	// ======================
@@ -263,7 +259,7 @@ int main() {
 	status = ui_LoadAssets();
 	if (status != UI_OK){
 		printf("ERROR! Unable to load asset data for user interface!\n");
-		ui_Close();
+		//ui_Close();
 		gfx_Close();
 		return status;
 	}
@@ -273,7 +269,7 @@ int main() {
 	delay(1000);
 	
 	getch();
-
+	return 0;
 	
 	// ======================
 	// Apply any settings from the config file

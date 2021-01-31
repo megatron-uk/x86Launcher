@@ -26,7 +26,7 @@
 #define BMP_8BPP					8	
 #define BMP_16BPP				16
 #define BMP_UNCOMPRESSED			0
-#define BMP_VERBOSE				0 // Enable BMP specific debug/verbose output
+#define BMP_VERBOSE				1 // Enable BMP specific debug/verbose output
 #define BMP_OK					0 // BMP loaded and decode okay
 #define BMP_ERR_NOFILE			-1 // Cannot find file
 #define BMP_ERR_SIZE				-2 // Height/Width outside bounds
@@ -73,7 +73,7 @@ typedef struct bmpdata {
 	unsigned int 	size;			// Size of the pixel data, in bytes
 	unsigned int		n_pixels;		// Number of pixels
 	struct pal_entry	palette[256];	// Palette entries for 8bit indexed images
-	unsigned char	*pixels;			// Pointer to raw pixels - in font mode each byte is a single pixel
+	unsigned char __huge	*pixels;			// Pointer to raw pixels - in font mode each byte is a single pixel
 } bmpdata_t;
 
 // ============================
@@ -84,7 +84,7 @@ typedef struct bmpdata {
 typedef struct bmpstate {
 	unsigned int	width_bytes;
 	unsigned int	rows_remaining;	// Total number of rows left to be read
-	unsigned char	*pixels;			// Needs to be malloc'ed to the width of a single row of pixels
+	unsigned char __huge	*pixels;			// Needs to be malloc'ed to the width of a single row of pixels
 } bmpstate_t;
 
 // ============================
