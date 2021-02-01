@@ -27,6 +27,8 @@
 #define PALETTES_UI				16	// Free to be used by gfx primitives etc
 #define PALETTES_FREE			208	// Free to be used by artwork and screenshots
 
+#define VGA_PALLETE_MASK_ADDR	0x03c6
+#define VGA_PALLETE_GET_ADDR		0x03c7
 #define VGA_PALLETE_SEL_ADDR		0x03c8
 #define VGA_PALLETE_SET_ADDR		0x03c9
 
@@ -51,8 +53,12 @@
 #define PALETTE_UI_14			PALETTES_FREE + PALETTES_RESERVED + 14
 #define PALETTE_UI_15			PALETTES_FREE + PALETTES_RESERVED + 15
 
+int 		pal_BMP2Palette_(bmpdata_t *bmpdata, bmpstate_t *bmpstate, int reserved, int is_full_bmp);
 int 		pal_BMP2Palette(bmpdata_t *bmpdata, int reserved);
+int 		pal_BMPState2Palette(bmpdata_t *bmpdata, bmpstate_t *bmpstate, int reserved);
 int 		pal_BMPRemap(bmpdata_t *bmpdata);
+int 		pal_BMPStateRemap(bmpdata_t *bmpdata, bmpstate_t *bmpstate);
+void 	pal_Get();
 void 	pal_ResetAll();
 void 	pal_ResetFree();
 void 	pal_Set(unsigned char idx, unsigned char r, unsigned char g, unsigned char b);

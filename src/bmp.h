@@ -70,8 +70,8 @@ typedef struct bmpdata {
 	int				offset;			// Offset from header to data section, in bytes
 	unsigned int 	row_padded;		// Size of a row without padding
 	unsigned int 	row_unpadded;	// SIze of a row, padded to a multiple of 4 bytes
-	unsigned int 	size;			// Size of the pixel data, in bytes
-	unsigned int		n_pixels;		// Number of pixels
+	unsigned long int 	size;			// Size of the pixel data, in bytes
+	unsigned long int	n_pixels;		// Number of pixels
 	struct pal_entry	palette[256];	// Palette entries for 8bit indexed images
 	unsigned char __huge	*pixels;			// Pointer to raw pixels - in font mode each byte is a single pixel
 } bmpdata_t;

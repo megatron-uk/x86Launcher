@@ -118,19 +118,19 @@ int ui_DisplayArtwork(FILE *screenshot_file, bmpdata_t *screenshot_bmp, state_t 
 	sprintf(msg, "%s\\%s", state->selected_game->path, imagefile->next->filename);
 	strcpy(state->selected_image, msg);
 	if (UI_VERBOSE){
-		printf("%s.%d\t Selected artwork filename [%s]\n", __FILE__, __LINE__, imagefile->next->filename);
+		printf("%s.%d\t ui_DisplayArtwork() Selected artwork filename [%s]\n", __FILE__, __LINE__, imagefile->next->filename);
 	}
 	
 	// =======================
 	// Open new screenshot file, ready parse
 	// =======================
 	if (UI_VERBOSE){
-		printf("%s.%d\t Opening artwork file\n", __FILE__, __LINE__);	
+		printf("%s.%d\t ui_DisplayArtwork() Opening artwork file\n", __FILE__, __LINE__);	
 	}
 	screenshot_file = fopen(state->selected_image, "rb");
 	if (screenshot_file == NULL){
 		if (UI_VERBOSE){
-			printf("%s.%d\t Error, unable to open artwork file\n", __FILE__, __LINE__);	
+			printf("%s.%d\t ui_DisplayArtwork() Error, unable to open artwork file\n", __FILE__, __LINE__);	
 		}
 		has_screenshot = 0;
 	} 
@@ -139,12 +139,12 @@ int ui_DisplayArtwork(FILE *screenshot_file, bmpdata_t *screenshot_bmp, state_t 
 		// Load header of screenshot bmp
 		// =======================
 		if (UI_VERBOSE){
-			printf("%s.%d\t Reading BMP data\n", __FILE__, __LINE__);	
+			printf("%s.%d\t ui_DisplayArtwork() Reading BMP data\n", __FILE__, __LINE__);	
 		}
 		status = bmp_ReadImage(screenshot_file, screenshot_bmp, 1, 1, 1);
 		if (status != 0){
 			if (UI_VERBOSE){
-				printf("%s.%d\t Error, BMP read call returned error\n", __FILE__, __LINE__);	
+				printf("%s.%d\t ui_DisplayArtwork() Error, BMP read call returned error\n", __FILE__, __LINE__);	
 			}
 			has_screenshot = 0;
 		} else {
@@ -153,23 +153,23 @@ int ui_DisplayArtwork(FILE *screenshot_file, bmpdata_t *screenshot_bmp, state_t 
 		if (has_screenshot){
 			// Reset free palette region
 			if (UI_VERBOSE){
-				printf("%s.%d\t Resetting free palette region entries\n", __FILE__, __LINE__);	
+				printf("%s.%d\t ui_DisplayArtwork() Resetting free palette region entries\n", __FILE__, __LINE__);	
 			}
 			pal_ResetFree();
 			// Set free palette region
 			if (UI_VERBOSE){
-				printf("%s.%d\t Setting new palette entries\n", __FILE__, __LINE__);	
+				printf("%s.%d\t ui_DisplayArtwork() Setting new palette entries\n", __FILE__, __LINE__);	
 			}
 			pal_BMP2Palette(screenshot_bmp, 0);
 			// Display bitmap
 			if (UI_VERBOSE){
-				printf("%s.%d\t Rendering BMP to buffer\n", __FILE__, __LINE__);	
+				printf("%s.%d\t ui_DisplayArtwork() Rendering BMP to buffer\n", __FILE__, __LINE__);	
 			}
 			gfx_Bitmap(ui_artwork_xpos + ((320 - screenshot_bmp->width) / 2) , ui_artwork_ypos + ((200 - screenshot_bmp->height) / 2), screenshot_bmp);
 		}
 	}
 	if (UI_VERBOSE){
-		printf("%s.%d\t Call to display %s complete\n", __FILE__, __LINE__, imagefile->next->filename);	
+		printf("%s.%d\t ui_DisplayArtwork() Call to display %s complete\n", __FILE__, __LINE__, imagefile->next->filename);	
 	}
 	fclose(screenshot_file);
 	return UI_OK;
@@ -418,36 +418,45 @@ int ui_DrawSplash(){
 	*/
 	int			status;
 	bmpdata_t 	*logo_bmp;
+	bmpstate_t	*logo_bmpstate;
 	
 	// Load splash logo
 	ui_asset_reader = fopen(splash_logo, "rb");
 	if (ui_asset_reader == NULL){
-		printf("Unable to open file\n");
+		printf("%s.%d\t ui_DrawSplash() Unable to open file\n", __FILE__, __LINE__);
 		return UI_ERR_FILE;	
 	}
-	logo_bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
-	if (logo_bmp == NULL){
-		printf("%s.%d\t Unable to allocate memory for splash bitmap.\n", __FILE__, __LINE__);
-		return UI_ERR_BMP;
-	}
-	logo_bmp->pixels = NULL;
-	status = bmp_ReadImage(ui_asset_reader, logo_bmp, 1, 1, 1);
-	if (status != 0){
-		printf("Unable to read BMP\n");
-		fclose(ui_asset_reader);
-		return UI_ERR_BMP;
-	}
-	fclose(ui_asset_reader);
 	
 	// Set the palette entries for the splash logo
 	pal_ResetFree();
-	pal_BMP2Palette(logo_bmp, 0);
 	
-	// Copy the bitmap to the vram buffer
-	gfx_Bitmap((GFX_COLS / 2) - (logo_bmp->width / 2), (GFX_ROWS / 2) - (logo_bmp->height / 2), logo_bmp);
+	// ===============================================
+	// 1. Copy the bitmap to the vram buffer one line at a time
+	// ===============================================
 	
-	// Destroy in-memory bitmap
+	// 1a. Allocate enough space for the bitmap header
+	logo_bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
+	if (logo_bmp == NULL){
+		printf("%s.%d\t ui_DrawSplash() Unable to allocate memory for splash bitmap.\n", __FILE__, __LINE__);
+		fclose(ui_asset_reader);
+		return UI_ERR_BMP;
+	}
+	// 1b. Allocate enough space for the state structure and line buffer
+	logo_bmpstate = (bmpstate_t *) malloc(sizeof(bmpstate_t));
+	if (logo_bmpstate == NULL){
+		printf("%s.%d\t ui_DrawSplash() Unable to allocate memory for splash bitmap state.\n", __FILE__, __LINE__);
+		fclose(ui_asset_reader);
+		bmp_Destroy(logo_bmp);
+		return UI_ERR_BMP;
+	}
+	// 1c. Work through the bitmap file, reading one line at a time into the line buffer
+	//status = gfx_BitmapAsyncFull((GFX_COLS / 2) - (logo_bmp->width / 2), (GFX_ROWS / 2) - (logo_bmp->height / 2), logo_bmp, ui_asset_reader, logo_bmpstate, 0);
+	status = gfx_BitmapAsyncFull((GFX_COLS / 2) - 100, 100, logo_bmp, ui_asset_reader, logo_bmpstate, 0, 0);
+	
+	// Destroy any resources
+	fclose(ui_asset_reader);
 	bmp_Destroy(logo_bmp);
+	free(logo_bmpstate);
 	
 	// Splash loaded okay
 	return UI_OK;
@@ -499,7 +508,7 @@ int ui_LoadAssets(){
 	ui_ProgressMessage("Loading browser select icon...");
 	gfx_Flip();
 	if (BMP_VERBOSE){
-		printf("%s.%d\t Loading %s\n", __FILE__, __LINE__, ui_select);
+		printf("%s.%d\t ui_LoadAssets() Loading %s\n", __FILE__, __LINE__, ui_select);
 	}
 	ui_asset_reader = fopen(ui_select, "rb");
 	if (ui_asset_reader == NULL){
@@ -507,7 +516,7 @@ int ui_LoadAssets(){
 	}
 	ui_select_bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
 	if (ui_select_bmp == NULL){
-		printf("%s.%d\t Unable to allocate memory for browser select icon.\n", __FILE__, __LINE__);
+		printf("%s.%d\t ui_LoadAssets() Unable to allocate memory for browser select icon.\n", __FILE__, __LINE__);
 		return UI_ERR_BMP;
 	}
 	
@@ -525,7 +534,7 @@ int ui_LoadAssets(){
 	ui_ProgressMessage("Loading checkbox...");
 	gfx_Flip();
 	if (BMP_VERBOSE){
-		printf("%s.%d\t Loading %s\n", __FILE__, __LINE__, ui_check_box);
+		printf("%s.%d\t ui_LoadAssets() Loading %s\n", __FILE__, __LINE__, ui_check_box);
 	}
 	ui_asset_reader = fopen(ui_check_box, "rb");
 	if (ui_asset_reader == NULL){
@@ -533,7 +542,7 @@ int ui_LoadAssets(){
 	}
 	ui_checkbox_bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
 	if (ui_checkbox_bmp == NULL){
-		printf("%s.%d\t Unable to allocate memory for checkbox icon.\n", __FILE__, __LINE__);
+		printf("%s.%d\t ui_LoadAssets() Unable to allocate memory for checkbox icon.\n", __FILE__, __LINE__);
 		return UI_ERR_BMP;
 	}
 	ui_checkbox_bmp->pixels = NULL;
@@ -550,7 +559,7 @@ int ui_LoadAssets(){
 	ui_ProgressMessage("Loading checkbox (empty) ...");
 	gfx_Flip();
 	if (BMP_VERBOSE){
-		printf("%s.%d\t Loading %s\n", __FILE__, __LINE__, ui_check_box_unchecked);
+		printf("%s.%d\t ui_LoadAssets() Loading %s\n", __FILE__, __LINE__, ui_check_box_unchecked);
 	}
 	ui_asset_reader = fopen(ui_check_box_unchecked, "rb");
 	if (ui_asset_reader == NULL){
@@ -558,7 +567,7 @@ int ui_LoadAssets(){
 	}
 	ui_checkbox_empty_bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
 	if (ui_checkbox_empty_bmp == NULL){
-		printf("%s.%d\t Unable to allocate memory for checkbox(empty) icon.\n", __FILE__, __LINE__);
+		printf("%s.%d\t ui_LoadAssets() Unable to allocate memory for checkbox(empty) icon.\n", __FILE__, __LINE__);
 		return UI_ERR_BMP;
 	}
 	ui_checkbox_empty_bmp->pixels = NULL;
@@ -575,7 +584,7 @@ int ui_LoadAssets(){
 	ui_ProgressMessage("Loading main UI background ...");
 	gfx_Flip();
 	if (BMP_VERBOSE){
-		printf("%s.%d\t Loading %s\n", __FILE__, __LINE__, ui_main);
+		printf("%s.%d\t ui_LoadAssets() Loading %s\n", __FILE__, __LINE__, ui_main);
 	}
 	ui_asset_reader = fopen(ui_main, "rb");
 	if (ui_asset_reader == NULL){
@@ -583,7 +592,7 @@ int ui_LoadAssets(){
 	}
 	ui_main_bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
 	if (ui_main_bmp == NULL){
-		printf("%s.%d\t Unable to allocate memory for main UI background.\n", __FILE__, __LINE__);
+		printf("%s.%d\t ui_LoadAssets() Unable to allocate memory for main UI background.\n", __FILE__, __LINE__);
 		return UI_ERR_BMP;
 	}
 	ui_main_bmp->pixels = NULL;
@@ -600,7 +609,7 @@ int ui_LoadAssets(){
 	ui_ProgressMessage("Loading browser background ...");
 	gfx_Flip();
 	if (BMP_VERBOSE){
-		printf("%s.%d\t Loading %s\n", __FILE__, __LINE__, ui_list_box);
+		printf("%s.%d\t ui_LoadAssets() Loading %s\n", __FILE__, __LINE__, ui_list_box);
 	}
 	ui_asset_reader = fopen(ui_list_box, "rb");
 	if (ui_asset_reader == NULL){
@@ -608,7 +617,7 @@ int ui_LoadAssets(){
 	}
 	ui_list_bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
 	if (ui_list_bmp == NULL){
-		printf("%s.%d\t Unable to allocate memory for browser list background.\n", __FILE__, __LINE__);
+		printf("%s.%d\t ui_LoadAssets() Unable to allocate memory for browser list background.\n", __FILE__, __LINE__);
 		return UI_ERR_BMP;
 	}
 	ui_list_bmp->pixels = NULL;
@@ -625,7 +634,7 @@ int ui_LoadAssets(){
 	ui_ProgressMessage("Loading artwork background ...");
 	gfx_Flip();
 	if (BMP_VERBOSE){
-		printf("%s.%d\t Loading %s\n", __FILE__, __LINE__, ui_art_box);
+		printf("%s.%d\t ui_LoadAssets() Loading %s\n", __FILE__, __LINE__, ui_art_box);
 	}
 	ui_asset_reader = fopen(ui_art_box, "rb");
 	if (ui_asset_reader == NULL){
@@ -633,7 +642,7 @@ int ui_LoadAssets(){
 	}
 	ui_art_bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
 	if (ui_art_bmp == NULL){
-		printf("%s.%d\t Unable to allocate memory for artwork background.\n", __FILE__, __LINE__);
+		printf("%s.%d\t ui_LoadAssets() Unable to allocate memory for artwork background.\n", __FILE__, __LINE__);
 		return UI_ERR_BMP;
 	}
 	ui_art_bmp->pixels = NULL;
@@ -650,7 +659,7 @@ int ui_LoadAssets(){
 	ui_ProgressMessage("Loading text entry (title) ...");
 	gfx_Flip();
 	if (BMP_VERBOSE){
-		printf("%s.%d\t Loading %s\n", __FILE__, __LINE__, ui_title_box);
+		printf("%s.%d\t ui_LoadAssets() Loading %s\n", __FILE__, __LINE__, ui_title_box);
 	}
 	ui_asset_reader = fopen(ui_title_box, "rb");
 	if (ui_asset_reader == NULL){
@@ -658,7 +667,7 @@ int ui_LoadAssets(){
 	}
 	ui_title_bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
 	if (ui_title_bmp == NULL){
-		printf("%s.%d\t Unable to allocate memory for title text.\n", __FILE__, __LINE__);
+		printf("%s.%d\t ui_LoadAssets() Unable to allocate memory for title text.\n", __FILE__, __LINE__);
 		return UI_ERR_BMP;
 	}
 	ui_title_bmp->pixels = NULL;
@@ -675,7 +684,7 @@ int ui_LoadAssets(){
 	ui_ProgressMessage("Loading text entry (year) ...");
 	gfx_Flip();
 	if (BMP_VERBOSE){
-		printf("%s.%d\t Loading %s\n", __FILE__, __LINE__, ui_year_box);
+		printf("%s.%d\t ui_LoadAssets() Loading %s\n", __FILE__, __LINE__, ui_year_box);
 	}
 	ui_asset_reader = fopen(ui_year_box, "rb");
 	if (ui_asset_reader == NULL){
@@ -683,7 +692,7 @@ int ui_LoadAssets(){
 	}
 	ui_year_bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
 	if (ui_year_bmp == NULL){
-		printf("%s.%d\t Unable to allocate memory for year text.\n", __FILE__, __LINE__);
+		printf("%s.%d\t ui_LoadAssets() Unable to allocate memory for year text.\n", __FILE__, __LINE__);
 		return UI_ERR_BMP;
 	}
 	ui_year_bmp->pixels = NULL;
@@ -700,7 +709,7 @@ int ui_LoadAssets(){
 	ui_ProgressMessage("Loading text entry (genre) ...");
 	gfx_Flip();
 	if (BMP_VERBOSE){
-		printf("%s.%d\t Loading %s\n", __FILE__, __LINE__, ui_genre_box);
+		printf("%s.%d\t ui_LoadAssets() Loading %s\n", __FILE__, __LINE__, ui_genre_box);
 	}
 	ui_asset_reader = fopen(ui_genre_box, "rb");
 	if (ui_asset_reader == NULL){
@@ -708,7 +717,7 @@ int ui_LoadAssets(){
 	}
 	ui_genre_bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
 	if (ui_genre_bmp == NULL){
-		printf("%s.%d\t Unable to allocate memory for genre text.\n", __FILE__, __LINE__);
+		printf("%s.%d\t ui_LoadAssets() Unable to allocate memory for genre text.\n", __FILE__, __LINE__);
 		return UI_ERR_BMP;
 	}
 	ui_genre_bmp->pixels = NULL;
@@ -725,7 +734,7 @@ int ui_LoadAssets(){
 	ui_ProgressMessage("Loading text entry (company) ...");
 	gfx_Flip();
 	if (BMP_VERBOSE){
-		printf("%s.%d\t Loading %s\n", __FILE__, __LINE__, ui_company_box);
+		printf("%s.%d\t ui_LoadAssets() Loading %s\n", __FILE__, __LINE__, ui_company_box);
 	}
 	ui_asset_reader = fopen(ui_company_box, "rb");
 	if (ui_asset_reader == NULL){
@@ -733,7 +742,7 @@ int ui_LoadAssets(){
 	}
 	ui_company_bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
 	if (ui_company_bmp == NULL){
-		printf("%s.%d\t Unable to allocate memory for company text.\n", __FILE__, __LINE__);
+		printf("%s.%d\t ui_LoadAssets() Unable to allocate memory for company text.\n", __FILE__, __LINE__);
 		return UI_ERR_BMP;
 	}
 	ui_company_bmp->pixels = NULL;
@@ -750,7 +759,7 @@ int ui_LoadAssets(){
 	ui_ProgressMessage("Loading text entry (series) ...");
 	gfx_Flip();
 	if (BMP_VERBOSE){
-		printf("%s.%d\t Loading %s\n", __FILE__, __LINE__, ui_series_box);
+		printf("%s.%d\t ui_LoadAssets() Loading %s\n", __FILE__, __LINE__, ui_series_box);
 	}
 	ui_asset_reader = fopen(ui_series_box, "rb");
 	if (ui_asset_reader == NULL){
@@ -758,7 +767,7 @@ int ui_LoadAssets(){
 	}
 	ui_series_bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
 	if (ui_series_bmp == NULL){
-		printf("%s.%d\t Unable to allocate memory for series text.\n", __FILE__, __LINE__);
+		printf("%s.%d\t ui_LoadAssets() Unable to allocate memory for series text.\n", __FILE__, __LINE__);
 		return UI_ERR_BMP;
 	}
 	ui_series_bmp->pixels = NULL;
@@ -776,7 +785,7 @@ int ui_LoadAssets(){
 	ui_ProgressMessage("Loading text entry (path) ...");
 	gfx_Flip();
 	if (BMP_VERBOSE){
-		printf("%s.%d\t Loading %s\n", __FILE__, __LINE__, ui_path_box);
+		printf("%s.%d\t ui_LoadAssets() Loading %s\n", __FILE__, __LINE__, ui_path_box);
 	}
 	ui_asset_reader = fopen(ui_path_box, "rb");
 	if (ui_asset_reader == NULL){
@@ -784,7 +793,7 @@ int ui_LoadAssets(){
 	}
 	ui_path_bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
 	if (ui_path_bmp == NULL){
-		printf("%s.%d\t Unable to allocate memory for path text.\n", __FILE__, __LINE__);
+		printf("%s.%d\t ui_LoadAssets() Unable to allocate memory for path text.\n", __FILE__, __LINE__);
 		return UI_ERR_BMP;
 	}
 	ui_path_bmp->pixels = NULL;
@@ -814,7 +823,7 @@ int ui_LoadFonts(){
 	ui_asset_reader = fopen(ui_font_name, "rb");
 	if (ui_asset_reader == NULL){
 		if (UI_VERBOSE){
-				printf("%s.%d\t Error loading UI font data\n", __FILE__, __LINE__);
+				printf("%s.%d\t ui_LoadFonts() Error loading UI font data\n", __FILE__, __LINE__);
 		}
 		return UI_ERR_FILE;     
 	}
@@ -830,7 +839,7 @@ int ui_LoadFonts(){
 	
 	if (status != 0){
 		if (UI_VERBOSE){
-				printf("%s.%d\t Error processing UI font data\n", __FILE__, __LINE__);
+				printf("%s.%d\t ui_LoadFonts() Error processing UI font data\n", __FILE__, __LINE__);
 		}
 		fclose(ui_asset_reader);
 		return UI_ERR_BMP;
@@ -883,7 +892,7 @@ int	ui_ReselectCurrentGame(state_t *state){
 	}
 	
 	if (UI_VERBOSE){
-		printf("%s.%d\t Reselecting game: %d, endpos: %d, selected line: %d\n", __FILE__, __LINE__, startpos, endpos, state->selected_line);
+		printf("%s.%d\t ui_ReselectCurrentGame() Game: %d, endpos: %d, selected line: %d\n", __FILE__, __LINE__, startpos, endpos, state->selected_line);
 	}
 		
 	selected = 0;
@@ -951,14 +960,14 @@ int ui_UpdateBrowserPane(state_t *state, gamedata_t *gamedata){
 	gamedata_head = gamedata;
 	y = ui_browser_font_y_pos;
 	if (UI_VERBOSE){
-		printf("%s.%d\t Building browser menu [%d-%d]\n", __FILE__, __LINE__, startpos, endpos);
+		printf("%s.%d\t ui_UpdateBrowserPane() Building browser menu [%d-%d]\n", __FILE__, __LINE__, startpos, endpos);
 	}
 	for(i = startpos; i < endpos ; i++){
 		gamedata = gamedata_head;
 		gameid = state->selected_list[i];
 		selected_game = getGameid(gameid, gamedata);
 		if (UI_VERBOSE){
-			printf("%s.%d\t - Line %d: Game ID %d, %s\n", __FILE__, __LINE__, i, gameid, selected_game->name);
+			printf("%s.%d\t ui_UpdateBrowserPane() - Line %d: Game ID %d, %s\n", __FILE__, __LINE__, i, gameid, selected_game->name);
 		}
 		sprintf(msg, "%s", selected_game->name);
 		gfx_Puts(ui_browser_font_x_pos, y, ui_font, msg);
@@ -983,7 +992,7 @@ int ui_UpdateBrowserPaneStatus(state_t *state){
 		y_pos = (ui_font->height + 2 ) * (state->selected_line);
 	}
 	if (UI_VERBOSE){
-		printf("%s.%d\t Drawing selection icon at line %d, x:%d y:%d\n", __FILE__, __LINE__, state->selected_line, ui_browser_cursor_xpos, (ui_browser_font_y_pos + y_pos));
+		printf("%s.%d\t ui_UpdateBrowserPaneStatus() Drawing selection icon at line %d, x:%d y:%d\n", __FILE__, __LINE__, state->selected_line, ui_browser_cursor_xpos, (ui_browser_font_y_pos + y_pos));
 	}
 	gfx_Bitmap(ui_browser_cursor_xpos, ui_browser_font_y_pos + y_pos, ui_select_bmp);
 	
@@ -1038,13 +1047,13 @@ int ui_UpdateInfoPane(state_t *state, gamedata_t *gamedata, launchdat_t *launchd
 	}
 	
 	if (UI_VERBOSE){
-		printf("%s.%d\t Selected State\n", __FILE__, __LINE__);
-		printf("%s.%d\t - Page: [%d]\n", __FILE__, __LINE__, state->selected_page);
-		printf("%s.%d\t - Line: [%d]\n", __FILE__, __LINE__, state->selected_line);
-		printf("%s.%d\t - selected game id: [%d]\n", __FILE__, __LINE__,  state->selected_gameid);
-		printf("%s.%d\t - retrieved game id: [%d]\n", __FILE__, __LINE__, state->selected_game->gameid);
-		printf("%s.%d\t - has_dat: [%d]\n", __FILE__, __LINE__, state->selected_game->has_dat);
-		printf("%s.%d\t - has_images: [%d]\n", __FILE__, __LINE__, state->has_images);
+		printf("%s.%d\t ui_UpdateInfoPane() Selected State\n", __FILE__, __LINE__);
+		printf("%s.%d\t ui_UpdateInfoPane() - Page: [%d]\n", __FILE__, __LINE__, state->selected_page);
+		printf("%s.%d\t ui_UpdateInfoPane() - Line: [%d]\n", __FILE__, __LINE__, state->selected_line);
+		printf("%s.%d\t ui_UpdateInfoPane() - selected game id: [%d]\n", __FILE__, __LINE__,  state->selected_gameid);
+		printf("%s.%d\t ui_UpdateInfoPane() - retrieved game id: [%d]\n", __FILE__, __LINE__, state->selected_game->gameid);
+		printf("%s.%d\t ui_UpdateInfoPane() - has_dat: [%d]\n", __FILE__, __LINE__, state->selected_game->has_dat);
+		printf("%s.%d\t ui_UpdateInfoPane() - has_images: [%d]\n", __FILE__, __LINE__, state->has_images);
 	}
 	
 	// See if it has a launch.dat metadata file
@@ -1072,12 +1081,12 @@ int ui_UpdateInfoPane(state_t *state, gamedata_t *gamedata, launchdat_t *launchd
 				// ======================
 				
 				if (UI_VERBOSE){
-					printf("%s.%d\t Info - metadata: yes\n", __FILE__, __LINE__);
-					printf("%s.%d\t Info - artwork: [%d]\n", __FILE__, __LINE__, state->has_images);
-					printf("%s.%d\t Info - start file: [%s]\n", __FILE__, __LINE__, launchdat->start);
-					printf("%s.%d\t Info - alt_start file: [%s]\n", __FILE__, __LINE__, launchdat->alt_start);
-					printf("%s.%d\t Info - midi: [%d]\n", __FILE__, __LINE__, launchdat->midi);
-					printf("%s.%d\t Info - midi serial: [%s]\n", __FILE__, __LINE__, launchdat->midi_serial);
+					printf("%s.%d\t ui_UpdateInfoPane()  - metadata: yes\n", __FILE__, __LINE__);
+					printf("%s.%d\t ui_UpdateInfoPane()  - artwork: [%d]\n", __FILE__, __LINE__, state->has_images);
+					printf("%s.%d\t ui_UpdateInfoPane()  - start file: [%s]\n", __FILE__, __LINE__, launchdat->start);
+					printf("%s.%d\t ui_UpdateInfoPane()  - alt_start file: [%s]\n", __FILE__, __LINE__, launchdat->alt_start);
+					printf("%s.%d\t ui_UpdateInfoPane()  - midi: [%d]\n", __FILE__, __LINE__, launchdat->midi);
+					printf("%s.%d\t ui_UpdateInfoPane()  - midi serial: [%s]\n", __FILE__, __LINE__, launchdat->midi_serial);
 				}
 				
 				gfx_Bitmap(ui_checkbox_has_metadata_xpos, ui_checkbox_has_metadata_ypos, ui_checkbox_bmp);
@@ -1112,7 +1121,7 @@ int ui_UpdateInfoPane(state_t *state, gamedata_t *gamedata, launchdat_t *launchd
 					sprintf(info_name, " %s", state->selected_game->name);
 				}
 				if (UI_VERBOSE){
-					printf("%s.%d\t Info - name: %s\n", __FILE__, __LINE__, info_name);
+					printf("%s.%d\t ui_UpdateInfoPane()  - name: %s\n", __FILE__, __LINE__, info_name);
 				}
 				
 				if (launchdat->genre != NULL){
@@ -1121,7 +1130,7 @@ int ui_UpdateInfoPane(state_t *state, gamedata_t *gamedata, launchdat_t *launchd
 					sprintf(info_genre, "N/A");
 				}
 				if (UI_VERBOSE){
-					printf("%s.%d\t Info - genre: %s\n", __FILE__, __LINE__, info_genre);
+					printf("%s.%d\t ui_UpdateInfoPane()  - genre: %s\n", __FILE__, __LINE__, info_genre);
 				}
 				
 				if (launchdat->series != NULL){
@@ -1130,7 +1139,7 @@ int ui_UpdateInfoPane(state_t *state, gamedata_t *gamedata, launchdat_t *launchd
 					sprintf(info_series, "N/A");
 				}
 				if (UI_VERBOSE){
-					printf("%s.%d\t Info - series: %s\n", __FILE__, __LINE__, info_series);
+					printf("%s.%d\t ui_UpdateInfoPane()  - series: %s\n", __FILE__, __LINE__, info_series);
 				}
 				
 				if (launchdat->year != 0){
@@ -1139,7 +1148,7 @@ int ui_UpdateInfoPane(state_t *state, gamedata_t *gamedata, launchdat_t *launchd
 					sprintf(info_year, "N/A");
 				}
 				if (UI_VERBOSE){
-					printf("%s.%d\t Info - year: %s\n", __FILE__, __LINE__, info_year);
+					printf("%s.%d\t ui_UpdateInfoPane()  - year: %s\n", __FILE__, __LINE__, info_year);
 				}
 				
 				if ((strlen(launchdat->developer) > 0) && (strlen(launchdat->publisher) > 0)){
@@ -1152,7 +1161,7 @@ int ui_UpdateInfoPane(state_t *state, gamedata_t *gamedata, launchdat_t *launchd
 					sprintf(info_company, " N/A");
 				}
 				if (UI_VERBOSE){
-					printf("%s.%d\t Info - company: %s\n", __FILE__, __LINE__, info_company);
+					printf("%s.%d\t ui_UpdateInfoPane()  - company: %s\n", __FILE__, __LINE__, info_company);
 				}
 				
 				// Start file

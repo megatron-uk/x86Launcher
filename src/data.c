@@ -80,7 +80,7 @@ int removeGamedata(gamedata_t *gamedata){
 	
 	if (current->next == NULL){
 		if (DATA_VERBOSE){
-			printf("%s.%d\t Freeing gamedata single object\n", __FILE__, __LINE__);	
+			printf("%s.%d\t removeGamedata() Freeing gamedata single object\n", __FILE__, __LINE__);	
 		}
 		free(current);
 		gamedata = NULL;
@@ -93,7 +93,7 @@ int removeGamedata(gamedata_t *gamedata){
 			    then move on to the next */
 			next = current->next;
 			if (DATA_VERBOSE){
-				printf("%s.%d\t Freeing gamedata list object [%s]\n", __FILE__, __LINE__, current->next->name);	
+				printf("%s.%d\t removeGamedata() Freeing gamedata list object [%s]\n", __FILE__, __LINE__, current->next->name);	
 			}
 			free(current);
 			current = next;
@@ -118,7 +118,7 @@ int removeImagefile(imagefile_t *imagefile){
 	}
 	
 	if (DATA_VERBOSE){
-		printf("%s.%d\t Freeing imagefile list\n", __FILE__, __LINE__);	
+		printf("%s.%d\t removeImagefile() Freeing imagefile list\n", __FILE__, __LINE__);	
 	}
 	if (imagefile->next != NULL){
 		imagefile = imagefile->next;	
@@ -129,13 +129,13 @@ int removeImagefile(imagefile_t *imagefile){
 			    then move on to the next */
 			next = imagefile->next;
 			if (DATA_VERBOSE){
-				printf("%s.%d\t Removing image list node [%s]\n", __FILE__, __LINE__, imagefile->filename);	
+				printf("%s.%d\t removeImagefile() Removing image list node [%s]\n", __FILE__, __LINE__, imagefile->filename);	
 			}
 			free(imagefile);
 			imagefile = next;
 		} else {
 			if (DATA_VERBOSE){
-				printf("%s.%d\t Removing final image node [%s]\n", __FILE__, __LINE__, imagefile->filename);	
+				printf("%s.%d\t removeImagefile() Removing final image node [%s]\n", __FILE__, __LINE__, imagefile->filename);	
 			}
 			free(imagefile);
 			imagefile = head;
@@ -304,12 +304,12 @@ int getLaunchdata(gamedata_t *gamedata, launchdat_t *launchdat){
 	launchdataDefaults(launchdat);
 	if (ini_parse(filepath, launchdatHandler, launchdat) < 0) {
 		if (DATA_VERBOSE){
-			printf("%s.%d\t Cannot load %s\n", __FILE__, __LINE__, filepath);
+			printf("%s.%d\t getLaunchdata() Cannot load %s\n", __FILE__, __LINE__, filepath);
 		}
 		return -1;
 	} else {
 		if (DATA_VERBOSE){
-			printf("%s.%d\t Loaded %s\n", __FILE__, __LINE__, filepath);
+			printf("%s.%d\t getLaunchdata() Loaded %s\n", __FILE__, __LINE__, filepath);
 		}
 		return 0;
 	}
@@ -349,7 +349,7 @@ int getIni(config_t *config, int verbose){
 	char my_path[DIR_BUFFER_SIZE];
 	
 	if (DATA_VERBOSE){
-		printf("%s.%d\t Initialising buffers\n", __FILE__, __LINE__);
+		printf("%s.%d\t getIni() Initialising buffers\n", __FILE__, __LINE__);
 	}
 	memset(my_dir, '\0', sizeof(my_dir));
 	memset(my_path, '\0', sizeof(my_path));
@@ -359,7 +359,7 @@ int getIni(config_t *config, int verbose){
 	status = dirFromPath(my_dir, my_path);
 	
 	if (DATA_VERBOSE){
-		printf("%s.%d\t Current dir: %s\n", __FILE__, __LINE__, my_dir);
+		printf("%s.%d\t getIni() Current dir: %s\n", __FILE__, __LINE__, my_dir);
 	}
 	
 	strcpy(my_path, my_dir);
@@ -372,11 +372,11 @@ int getIni(config_t *config, int verbose){
 	chdir(my_dir);
 	
 	if (DATA_VERBOSE){
-		printf("%s.%d\t Calling parser\n", __FILE__, __LINE__);
+		printf("%s.%d\t getIni() Calling parser\n", __FILE__, __LINE__);
 	}
 	if (ini_parse(my_path, configHandler, config) < 0) {
 		if (DATA_VERBOSE){
-			printf("%s.%d\t Cannot load %s\n", __FILE__, __LINE__, my_path);
+			printf("%s.%d\t getIni() Cannot load %s\n", __FILE__, __LINE__, my_path);
 		}
 		return -1;
 	} else {
@@ -398,7 +398,7 @@ int getImageList(launchdat_t *launchdat, imagefile_t *imagefile){
 		p = strtok(buffer, ",; ");
 		while (p != NULL){
 			if (DATA_VERBOSE){
-				printf("%s.%d\t Extracted image filename [%s], %d len\n", __FILE__, __LINE__, p, strlen(p));
+				printf("%s.%d\t getImageList() Extracted image filename [%s], %d len\n", __FILE__, __LINE__, p, strlen(p));
 			}
 			found++;
 			imagefile = getLastImage(imagefile);
@@ -409,14 +409,14 @@ int getImageList(launchdat_t *launchdat, imagefile_t *imagefile){
 			imagefile->next->next = NULL;
 			if (found >= MAX_IMAGES){
 				if (DATA_VERBOSE){
-					printf("%s.%d\t Hit limit of %d image filenames\n", __FILE__, __LINE__, MAX_IMAGES);
+					printf("%s.%d\t getImageList() Hit limit of %d image filenames\n", __FILE__, __LINE__, MAX_IMAGES);
 				}
 				return found;
 			}
 			p = strtok(NULL, ",; ");
 		}
 		if (DATA_VERBOSE){
-			printf("%s.%d\t Found %d image filenames\n", __FILE__, __LINE__, found);
+			printf("%s.%d\t getImageList() Found %d image filenames\n", __FILE__, __LINE__, found);
 		}
 		return found;
 	} else {
@@ -439,7 +439,7 @@ int getDirList(config_t *config, gamedir_t *gamedir, int verbose){
 		while (p != NULL){
 			if (isDir(p)){
 				if (DATA_VERBOSE){
-					printf("%s.%d\t Game search path %s\n", __FILE__, __LINE__, p);	
+					printf("%s.%d\t getDirList() Game search path %s\n", __FILE__, __LINE__, p);	
 				}
 				found++;
 				gamedir = getLastGameDir(gamedir);
@@ -453,23 +453,23 @@ int getDirList(config_t *config, gamedir_t *gamedir, int verbose){
 				}
 				if (found >= MAX_DIRS){
 					if (DATA_VERBOSE){
-						printf("%s.%d\t Hit game search path limit [%d]\n", __FILE__, __LINE__, MAX_IMAGES);	
+						printf("%s.%d\t getDirList() Hit game search path limit [%d]\n", __FILE__, __LINE__, MAX_IMAGES);	
 					}
 					break;
 				}
 			} else {
 				if (DATA_VERBOSE){
-					printf("%s.%d\t Game search path %s not found, skipping\n", __FILE__, __LINE__, p);
+					printf("%s.%d\t getDirList() Game search path %s not found, skipping\n", __FILE__, __LINE__, p);
 				}
 			}
 			p = strtok(NULL, ",");
 		}
 		if (DATA_VERBOSE){
-			printf("%s.%d\t Found [%d] game search paths\n", __FILE__, __LINE__, found);	
+			printf("%s.%d\t getDirList() Found [%d] game search paths\n", __FILE__, __LINE__, found);	
 		}
 	} else {
 		if (DATA_VERBOSE){
-			printf("%s.%d\t No game search paths found\n", __FILE__, __LINE__);	
+			printf("%s.%d\t getDirList() No game search paths found\n", __FILE__, __LINE__);	
 		}
 		return -1;	
 	}	

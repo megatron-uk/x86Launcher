@@ -250,7 +250,7 @@ int main() {
 	progress += splash_progress_chunk_size;
 	ui_DrawSplashProgress(0, progress);
 	gfx_Flip();
-		
+	
 	// ======================
 	// Load UI asset data
 	// ======================
@@ -267,10 +267,8 @@ int main() {
 	ui_DrawSplashProgress(0, progress);
 	gfx_Flip();
 	delay(1000);
-	
-	getch();
 	return 0;
-	
+		
 	// ======================
 	// Apply any settings from the config file
 	// ... including extracting the search directory
@@ -313,8 +311,6 @@ int main() {
 	ui_ProgressMessage("Configuration applied!");
 	gfx_Flip();
 	
-	getch();
-	
 	// ======================
 	//
 	// This section here loops through our game search paths and finds
@@ -334,7 +330,6 @@ int main() {
 	sprintf(msg, "Scraping %d directories for content...", scrape_dirs);
 	ui_ProgressMessage(msg);
 	gfx_Flip();
-	
 	
 	gamedir = config->dir;
 	while (gamedir->next != NULL){
@@ -356,9 +351,7 @@ int main() {
 	}	
 	ui_ProgressMessage("Scraped!");
 	gfx_Flip();
-	
-	return 0;
-	
+		
 	// ========================
 	//
 	// No gamedirs were found

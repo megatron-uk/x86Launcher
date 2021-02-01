@@ -32,7 +32,22 @@
 unsigned int free_palettes_used;			// Current number of palette entries used
 unsigned int reserved_palettes_used;		// Current number of palette entries used
 
+int pal_BMPState2Palette(bmpdata_t *bmpdata, bmpstate_t *bmpstate, int reserved){
+	// Set palette entries based on the current data in a bmpstate->pixels structure - 
+	
+	return pal_BMP2Palette_(bmpdata, bmpstate, reserved, 0);
+	
+}
+
 int pal_BMP2Palette(bmpdata_t *bmpdata, int reserved){
+	// Set palette entries based on the current data in a bmp->pixels structure - 
+	// this is just a single line, so we can't go remapping all of the pixels
+	// in the main bmp->pixels structure (which is empty if loading a bmp asyncrhonously).
+	
+	return pal_BMP2Palette_(bmpdata, NULL, reserved, 1);
+}
+
+int pal_BMP2Palette_(bmpdata_t *bmpdata, bmpstate_t *bmpstate, int reserved, int is_full_bmp){
 	// Set palette entries based on a specific bmpdata structure
 	// restricted == 1 if we are setting the 32 reserved colours of the user interface
 	
@@ -43,7 +58,7 @@ int pal_BMP2Palette(bmpdata_t *bmpdata, int reserved){
 		// Set palette entries for the restricted region (UI elements)
 		
 		if (PALETTE_VERBOSE){
-			printf("%s.%d\t Setting reserved UI palette entries\n", __FILE__, __LINE__);
+			printf("%s.%d\t pal_BMP2Palette() Setting reserved UI palette entries\n", __FILE__, __LINE__);
 		}
 		
 		if (reserved_palettes_used < PALETTES_RESERVED){
@@ -53,7 +68,7 @@ int pal_BMP2Palette(bmpdata_t *bmpdata, int reserved){
 				if (i >= PALETTES_RESERVED){
 					// Somehow this image has more colours than we have reserved palette entries
 					if (PALETTE_VERBOSE){
-						printf("%s.%d\t Warning, more colours than available in reserved palette entry space!\n", __FILE__, __LINE__);
+						printf("%s.%d\t pal_BMP2Palette() Warning, more colours than available in reserved palette entry space!\n", __FILE__, __LINE__);
 					}
 					return -1;
 				}
@@ -65,7 +80,7 @@ int pal_BMP2Palette(bmpdata_t *bmpdata, int reserved){
 				} else {
 					// No free palette entries remaining - this shouldnt happen with the UI!!!
 					if (PALETTE_VERBOSE){
-						printf("%s.%d\t Warning, we ran out of reserved palette entries before processing all colours!\n", __FILE__, __LINE__);
+						printf("%s.%d\t pal_BMP2Palette() Warning, we ran out of reserved palette entries before processing all colours!\n", __FILE__, __LINE__);
 					}
 					return -1;
 				}
@@ -76,13 +91,17 @@ int pal_BMP2Palette(bmpdata_t *bmpdata, int reserved){
 		} else {
 			// Maximum number of palette entries reached
 			if (PALETTE_VERBOSE){
-				printf("%s.%d\t Reserved UI palette entries already set\n", __FILE__, __LINE__);
+				printf("%s.%d\t pal_BMP2Palette() Reserved UI palette entries already set\n", __FILE__, __LINE__);
 			}
 			// Remap the bitmap pixels to the new palette indices
 			for (i = 0; i < bmpdata->colours; i++){
 				bmpdata->palette[i].new_palette_entry = i + PALETTES_FREE;	
 			}
-			pal_BMPRemap(bmpdata);
+			if (is_full_bmp){
+				pal_BMPRemap(bmpdata);
+			} else {
+				pal_BMPStateRemap(bmpdata, bmpstate);
+			}
 			return -1;
 		}
 		
@@ -109,7 +128,7 @@ int pal_BMPRemap(bmpdata_t *bmpdata){
 	unsigned char *px;
 	unsigned char c;
 	int i;
-	int pos;
+	long int pos;
 	int px_remapped, colours_remapped, remapped;
 	
 	px_remapped = 0;
@@ -117,7 +136,7 @@ int pal_BMPRemap(bmpdata_t *bmpdata){
 	
 	if (bmpdata->pixels == NULL){
 		if (PALETTE_VERBOSE){
-			printf("%s.%d\t Unable to remap palette; no pixel data in bmp structure\n", __FILE__, __LINE__);
+			printf("%s.%d\t pal_BMPRemap() Unable to remap palette; no pixel data in bmp structure\n", __FILE__, __LINE__);
 		}
 		return PALETTE_NO_PIXELS;
 	} else {
@@ -135,7 +154,44 @@ int pal_BMPRemap(bmpdata_t *bmpdata){
 		}
 		
 		if (PALETTE_VERBOSE){
-			printf("%s.%d\t Total of %d pixels remapped\n", __FILE__, __LINE__, px_remapped);
+			printf("%s.%d\t pal_BMPRemap() Total of %d pixels remapped\n", __FILE__, __LINE__, px_remapped);
+		}
+		return PALETTE_OK;
+	}
+}
+
+int pal_BMPStateRemap(bmpdata_t *bmpdata, bmpstate_t *bmpstate){
+
+	unsigned char *px;
+	unsigned char c;
+	int i;
+	long int pos;
+	int px_remapped, colours_remapped, remapped;
+	
+	px_remapped = 0;
+	colours_remapped = 0;
+	
+	if (bmpdata->pixels == NULL){
+		if (PALETTE_VERBOSE){
+			printf("%s.%d\t pal_BMPStateRemap() Unable to remap palette; no pixel data in bmp structure\n", __FILE__, __LINE__);
+		}
+		return PALETTE_NO_PIXELS;
+	} else {
+		
+		px = bmpstate->pixels;
+		// A single loop over all the pixels
+		for (pos = 0; pos < bmpstate->width_bytes; pos++){
+			// Read the value of the current pixel, this is the palette entry number
+			c = *px;
+			// Set it to the new palette entry number
+			*px = (unsigned char) bmpdata->palette[c].new_palette_entry;
+			px_remapped++;
+			// Step to next pixel
+			px++;
+		}
+		
+		if (PALETTE_VERBOSE){
+			printf("%s.%d\t pal_BMPStateRemap() Total of %d pixels remapped\n", __FILE__, __LINE__, px_remapped);
 		}
 		return PALETTE_OK;
 	}
@@ -147,10 +203,11 @@ void pal_ResetAll(){
 	unsigned int i;
 	
 	if (PALETTE_VERBOSE){
-		printf("%s.%d\t Resetting all palette entries\n", __FILE__, __LINE__);		
+		printf("%s.%d\t pal_ResetAll() Resetting all palette entries\n", __FILE__, __LINE__);		
 	}
 	
 	for (i = 0; i < 256; i++){
+		outp(VGA_PALLETE_MASK_ADDR, 0xFF);
 		outp(VGA_PALLETE_SEL_ADDR, i);
 		outp(VGA_PALLETE_SET_ADDR, 0x0);
 		outp(VGA_PALLETE_SET_ADDR, 0x0);
@@ -169,10 +226,11 @@ void pal_ResetFree(){
 	unsigned int i;
 	
 	if (PALETTE_VERBOSE){
-		printf("%s.%d\t Resetting free palette entries range (0-%d)\n", __FILE__, __LINE__, PALETTES_FREE);		
+		printf("%s.%d\t pal_Reset() FreeResetting free palette entries range (0-%d)\n", __FILE__, __LINE__, PALETTES_FREE);		
 	}
 	
 	for (i = 0; i < PALETTES_FREE; i++){
+		outp(VGA_PALLETE_MASK_ADDR, 0xFF);
 		outp(VGA_PALLETE_SEL_ADDR, i);
 		outp(VGA_PALLETE_SET_ADDR, 0x0);
 		outp(VGA_PALLETE_SET_ADDR, 0x0);
@@ -187,13 +245,14 @@ void pal_ResetFree(){
 void pal_Set(unsigned char idx, unsigned char r, unsigned char g, unsigned char b){
 	
 	if (PALETTE_VERBOSE){
-		printf("%s.%d\t Set palette #%3d r:%3d g:%3d b:%3d\n", __FILE__, __LINE__, idx, r, g, b);
+		printf("%s.%d\t pal_Set() Set palette #%3d r:%3d g:%3d b:%3d\n", __FILE__, __LINE__, idx, r, g, b);
 	}
 	
+	outp(VGA_PALLETE_MASK_ADDR, 0xFF);
 	outp(VGA_PALLETE_SEL_ADDR, idx);
-	outp(VGA_PALLETE_SET_ADDR, r);
-	outp(VGA_PALLETE_SET_ADDR, g);
-	outp(VGA_PALLETE_SET_ADDR, b);
+	outp(VGA_PALLETE_SET_ADDR, r >> 2);
+	outp(VGA_PALLETE_SET_ADDR, g >> 2);
+	outp(VGA_PALLETE_SET_ADDR, b >> 2);
 	
 	return;
 }
@@ -202,7 +261,7 @@ void pal_SetUI(){
 	// Set the 16 UI palette colour entries
 	
 	if (PALETTE_VERBOSE){
-		printf("%s.%d\t Setting additional UI palette entries\n", __FILE__, __LINE__);
+		printf("%s.%d\t pal_SetUI() Setting additional UI palette entries\n", __FILE__, __LINE__);
 	}
 	
 	pal_Set(PALETTE_UI_BLACK, 0,   0,   0);
@@ -214,4 +273,20 @@ void pal_SetUI(){
 	pal_Set(PALETTE_UI_GREEN, 0,   220, 0);
 	pal_Set(PALETTE_UI_BLUE,  0,   0,   220);
 	pal_Set(PALETTE_UI_YELLOW,180, 220, 20);
+}
+
+void pal_Get(){
+	// Read and display current palette entries
+	
+	unsigned short idx;
+	unsigned char r, g, b;
+	
+	for (idx = 0; idx < 256; idx++){
+		outp(VGA_PALLETE_MASK_ADDR, 0xFF);
+		outp(VGA_PALLETE_SEL_ADDR, idx);
+		r = inp(VGA_PALLETE_SET_ADDR);
+		g = inp(VGA_PALLETE_SET_ADDR);
+		b = inp(VGA_PALLETE_SET_ADDR);
+		printf("%s.%d\t pal_Get() Get palette #%3d : r:%3d g:%3d b:%3d\n", __FILE__, __LINE__, idx, r, g, b);
+	}
 }

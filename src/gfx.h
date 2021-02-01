@@ -46,6 +46,8 @@
 /* **************************** */
 
 int			gfx_Bitmap(int x, int y, bmpdata_t *bmpdata);
+int 			gfx_BitmapAsync(int x, int y, bmpdata_t *bmpdata, FILE *bmpfile, bmpstate_t *bmpstate, int remap_palette, int reserved_palette);
+int 			gfx_BitmapAsyncFull(int x, int y, bmpdata_t *bmpdata, FILE *bmpfile, bmpstate_t *bmpstate, int remap_palette, int reserved_palette);
 int 			gfx_Box(int x1, int y1, int x2, int y2, unsigned char palette);
 int 			gfx_BoxFill(int x1, int y1, int x2, int y2, unsigned char palette);
 int			gfx_BoxFillTranslucent(int x1, int y1, int x2, int y2, unsigned char palette);

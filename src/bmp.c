@@ -47,7 +47,7 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 		status = fseek(bmp_image, DATA_OFFSET_OFFSET, SEEK_SET);
 		if (status != 0){
 			if (BMP_VERBOSE){
-				printf("%s.%d\t Error seeking data offset in header\n", __FILE__, __LINE__);
+				printf("%s.%d\t bmp_ReadImage() Error seeking data offset in header\n", __FILE__, __LINE__);
 			}
 			return BMP_ERR_READ;
 		}
@@ -55,7 +55,7 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 		status = fread(&bmpdata->offset, 4, 1, bmp_image);
 		if (status < 1){
 			if (BMP_VERBOSE){
-				printf("%s.%d\t Error reading %d records at data offset header pos, got %d\n", __FILE__, __LINE__, 4, status);
+				printf("%s.%d\t bmp_ReadImage() Error reading %d records at data offset header pos, got %d\n", __FILE__, __LINE__, 4, status);
 			}
 			return BMP_ERR_READ;
 		}
@@ -64,7 +64,7 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 		status = fseek(bmp_image, DIB_HEADER_OFFSET, SEEK_SET);
 		if (status != 0){
 			if (BMP_VERBOSE){
-				printf("%s.%d\t Error seeking DIB header in header\n", __FILE__, __LINE__);
+				printf("%s.%d\t bmp_ReadImage() Error seeking DIB header in header\n", __FILE__, __LINE__);
 			}
 			return BMP_ERR_READ;
 		}
@@ -72,7 +72,7 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 		status = fread(&bmpdata->dib_size, 4, 1, bmp_image);
 		if (status < 1){
 			if (BMP_VERBOSE){
-				printf("%s.%d\t Error reading %d records at DIB header pos, got %d\n", __FILE__, __LINE__, 4, status);
+				printf("%s.%d\t bmp_ReadImage() Error reading %d records at DIB header pos, got %d\n", __FILE__, __LINE__, 4, status);
 			}
 			return BMP_ERR_READ;
 		}
@@ -82,7 +82,7 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 		status = fseek(bmp_image, WIDTH_OFFSET, SEEK_SET);
 		if (status != 0){
 			if (BMP_VERBOSE){
-				printf("%s.%d\t Error seeking width in header\n", __FILE__, __LINE__);
+				printf("%s.%d\t bmp_ReadImage() Error seeking width in header\n", __FILE__, __LINE__);
 			}
 			return BMP_ERR_READ;
 		}
@@ -90,7 +90,7 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 		status = fread(&bmpdata->width, 4, 1, bmp_image);
 		if (status < 1){
 			if (BMP_VERBOSE){
-				printf("%s.%d\t Error reading %d records at image width header pos, got %d\n", __FILE__, __LINE__, 4, status);
+				printf("%s.%d\t bmp_ReadImage() Error reading %d records at image width header pos, got %d\n", __FILE__, __LINE__, 4, status);
 			}
 			return BMP_ERR_READ;
 		}
@@ -99,7 +99,7 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 		status = fseek(bmp_image, HEIGHT_OFFSET, SEEK_SET);
 		if (status != 0){
 			if (BMP_VERBOSE){
-				printf("%s.%d\t Error seeking height in header\n", __FILE__, __LINE__);
+				printf("%s.%d\t bmp_ReadImage() Error seeking height in header\n", __FILE__, __LINE__);
 			}
 			return BMP_ERR_READ;
 		}
@@ -107,16 +107,19 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 		status = fread(&bmpdata->height, 4, 1, bmp_image);
 		if (status < 1){
 			if (BMP_VERBOSE){
-				printf("%s.%d\t Error reading %d records at image height header pos, got %d\n", __FILE__, __LINE__, 4, status);
+				printf("%s.%d\t bmp_ReadImage() Error reading %d records at image height header pos, got %d\n", __FILE__, __LINE__, 4, status);
 			}
 			return BMP_ERR_READ;
+		}
+		if (bmpdata->height < 0){
+			bmpdata->height = abs(bmpdata->height);		
 		}
 		
 		// Seek to bpp location in header
 		status = fseek(bmp_image, BITS_PER_PIXEL_OFFSET, SEEK_SET);
 		if (status != 0){
 			if (BMP_VERBOSE){
-				printf("%s.%d\t Error seeking bpp in header\n", __FILE__, __LINE__);
+				printf("%s.%d\t bmp_ReadImage() Error seeking bpp in header\n", __FILE__, __LINE__);
 			}
 			return BMP_ERR_READ;
 		}
@@ -124,14 +127,14 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 		status = fread(&bmpdata->bpp, 2, 1, bmp_image);
 		if (status < 1){
 			if (BMP_VERBOSE){
-				printf("%s.%d\t Error reading %d records at bpp header pos, got %d\n", __FILE__, __LINE__, 2, status);
+				printf("%s.%d\t bmp_ReadImage() Error reading %d records at bpp header pos, got %d\n", __FILE__, __LINE__, 2, status);
 			}
 			return BMP_ERR_READ;
 		}
 		if ((bmpdata->bpp != BMP_4BPP) && (bmpdata->bpp != BMP_8BPP) && (bmpdata->bpp != BMP_16BPP) && (bmpdata->bpp != BMP_1BPP)){
 			if (BMP_VERBOSE){
-				printf("%s.%d\t Unsupported pixel depth of %dbpp\n", __FILE__, __LINE__, bmpdata->bpp);
-				printf("%s.%d\t The supported pixel depths are %d, %d and %d\n", __FILE__, __LINE__, BMP_8BPP, BMP_16BPP, BMP_1BPP);
+				printf("%s.%d\t bmp_ReadImage() Unsupported pixel depth of %dbpp\n", __FILE__, __LINE__, bmpdata->bpp);
+				printf("%s.%d\t bmp_ReadImage() The supported pixel depths are %d and %d\n", __FILE__, __LINE__, BMP_8BPP, BMP_1BPP);
 			}
 			return BMP_ERR_BPP;
 		}
@@ -140,7 +143,7 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 		status = fseek(bmp_image, COLOUR_NUM_OFFSET, SEEK_SET);
 		if (status != 0){
 			if (BMP_VERBOSE){
-				printf("%s.%d\t Error seeking compression field in header\n", __FILE__, __LINE__);
+				printf("%s.%d\t bmp_ReadImage() Error seeking compression field in header\n", __FILE__, __LINE__);
 			}
 			return BMP_ERR_READ;
 		}
@@ -148,7 +151,7 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 		status = fread(&bmpdata->colours, sizeof(bmpdata->colours), 1, bmp_image);
 		if (status < 1){
 			if (BMP_VERBOSE){
-				printf("%s.%d\t Error reading %d records at colour count type header pos, got %d\n", __FILE__, __LINE__, 4, status);
+				printf("%s.%d\t bmp_ReadImage() Error reading %d records at colour count type header pos, got %d\n", __FILE__, __LINE__, 4, status);
 			}
 			return BMP_ERR_READ;
 		}
@@ -157,7 +160,7 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 		status = fseek(bmp_image, COMPRESS_OFFSET, SEEK_SET);
 		if (status != 0){
 			if (BMP_VERBOSE){
-				printf("%s.%d\t Error seeking compression field in header\n", __FILE__, __LINE__);
+				printf("%s.%d\t bmp_ReadImage() Error seeking compression field in header\n", __FILE__, __LINE__);
 			}
 			return BMP_ERR_READ;
 		}		
@@ -165,13 +168,13 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 		status = fread(&bmpdata->compressed, sizeof(bmpdata->compressed), 1, bmp_image);
 		if (status < 1){
 			if (BMP_VERBOSE){
-				printf("%s.%d\t Error reading %d records at compression type header pos, got %d\n", __FILE__, __LINE__, 4, status);
+				printf("%s.%d\t bmp_ReadImage() Error reading %d records at compression type header pos, got %d\n", __FILE__, __LINE__, 4, status);
 			}
 			return BMP_ERR_READ;
 		}
 		if (bmpdata->compressed != BMP_UNCOMPRESSED){
 			if (BMP_VERBOSE){
-				printf("%s.%d\t Unsupported compressed BMP format\n", __FILE__, __LINE__);
+				printf("%s.%d\t bmp_ReadImage() Unsupported compressed BMP format\n", __FILE__, __LINE__);
 			}
 			return BMP_ERR_COMPRESSED;
 		}
@@ -195,16 +198,16 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 		}
 		
 		if (BMP_VERBOSE){
-			printf("%s.%d\t Bitmap header loaded ok!\n", __FILE__, __LINE__);
-			printf("%s.%d\t Info - DIB header size: %d\n", __FILE__, __LINE__, bmpdata->dib_size);
-			printf("%s.%d\t Info - Resolution: %dx%d\n", __FILE__, __LINE__, bmpdata->width, bmpdata->height);
-			printf("%s.%d\t Info - Padded row size: %d bytes\n", __FILE__, __LINE__, bmpdata->row_padded);
-			printf("%s.%d\t Info - Unpadded row size: %d bytes\n", __FILE__, __LINE__, bmpdata->row_unpadded);
-			printf("%s.%d\t Info - Colour depth: %dbpp\n", __FILE__, __LINE__, bmpdata->bpp);
-			printf("%s.%d\t Info - Colour count: %d\n", __FILE__, __LINE__, bmpdata->colours);
-			printf("%s.%d\t Info - Colour table @ %x\n", __FILE__, __LINE__, bmpdata->colours_offset);
-			printf("%s.%d\t Info - Storage size: %d bytes\n", __FILE__, __LINE__, bmpdata->size);
-			printf("%s.%d\t Info - Pixel data @ %x\n", __FILE__, __LINE__, (unsigned int) &bmpdata->pixels);
+			printf("%s.%d\t bmp_ReadImage() Bitmap header loaded ok!\n", __FILE__, __LINE__);
+			printf("%s.%d\t bmp_ReadImage() DIB header size: %d\n", __FILE__, __LINE__, bmpdata->dib_size);
+			printf("%s.%d\t bmp_ReadImage() Resolution: %dx%d\n", __FILE__, __LINE__, bmpdata->width, bmpdata->height);
+			printf("%s.%d\t bmp_ReadImage() Padded row size: %d bytes\n", __FILE__, __LINE__, bmpdata->row_padded);
+			printf("%s.%d\t bmp_ReadImage() Unpadded row size: %d bytes\n", __FILE__, __LINE__, bmpdata->row_unpadded);
+			printf("%s.%d\t bmp_ReadImage() Colour depth: %dbpp\n", __FILE__, __LINE__, bmpdata->bpp);
+			printf("%s.%d\t bmp_ReadImage() Colour count: %d\n", __FILE__, __LINE__, bmpdata->colours);
+			printf("%s.%d\t bmp_ReadImage() Colour table @ %x\n", __FILE__, __LINE__, bmpdata->colours_offset);
+			printf("%s.%d\t bmp_ReadImage() Storage size: %ld bytes\n", __FILE__, __LINE__, bmpdata->size);
+			printf("%s.%d\t bmp_ReadImage() Pixel data @ %x\n", __FILE__, __LINE__, (unsigned int) &bmpdata->pixels);
 		}
 	}
 	
@@ -218,7 +221,7 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 		// First verify if we've actually read the header section and know where the colour table is...
 		if (bmpdata->colours_offset <= 0){
 			if (BMP_VERBOSE){
-				printf("%s.%d\t Colour table offset not found or null, unable to seek to colour table\n", __FILE__, __LINE__);
+				printf("%s.%d\t bmp_ReadImage() Colour table offset not found or null, unable to seek to colour table\n", __FILE__, __LINE__);
 			}
 			return BMP_ERR_READ;
 		}
@@ -227,28 +230,28 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 			status = fseek(bmp_image, bmpdata->colours_offset + (i * 4), SEEK_SET);
 			if (status != 0){
 				if (BMP_VERBOSE){
-					printf("%s.%d\t Error seeking to palette %d\n", __FILE__, __LINE__, i);
+					printf("%s.%d\t bmp_ReadImage() Error seeking to palette %d\n", __FILE__, __LINE__, i);
 				}
 				return BMP_ERR_READ;
 			}
 			status = fread(&b, 1, 1, bmp_image);
 			if (status < 1){
 				if (BMP_VERBOSE){
-					printf("%s.%d\t Error reading file at pos %u for palette %d, Red\n", __FILE__, __LINE__, (unsigned int) ftell(bmp_image), i);
+					printf("%s.%d\t bmp_ReadImage() Error reading file at pos %u for palette %d, Red\n", __FILE__, __LINE__, (unsigned int) ftell(bmp_image), i);
 				}
 				return BMP_ERR_READ;
 			}
 			status = fread(&g, 1, 1, bmp_image);
 			if (status < 1){
 				if (BMP_VERBOSE){
-					printf("%s.%d\t Error reading file at pos %u for palette %d, Red\n", __FILE__, __LINE__, (unsigned int) ftell(bmp_image), i);
+					printf("%s.%d\t bmp_ReadImage() Error reading file at pos %u for palette %d, Red\n", __FILE__, __LINE__, (unsigned int) ftell(bmp_image), i);
 				}
 				return BMP_ERR_READ;
 			}
 			status = fread(&r, 1, 1, bmp_image);
 			if (status < 1){
 				if (BMP_VERBOSE){
-					printf("%s.%d\t Error reading file at pos %u for palette %d, Red\n", __FILE__, __LINE__, (unsigned int) ftell(bmp_image), i);
+					printf("%s.%d\t bmp_ReadImage() Error reading file at pos %u for palette %d, Red\n", __FILE__, __LINE__, (unsigned int) ftell(bmp_image), i);
 				}
 				return BMP_ERR_READ;
 			}
@@ -262,7 +265,7 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 			bmpdata->palette[i].new_palette_entry = i;
 		}
 		if (BMP_VERBOSE){
-			printf("%s.%d\t Extracted %d palette entries ok!\n", __FILE__, __LINE__, bmpdata->colours);
+			printf("%s.%d\t bmp_ReadImage() Extracted %d palette entries ok!\n", __FILE__, __LINE__, bmpdata->colours);
 		}
 	}
 	
@@ -277,7 +280,7 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 		// First verify if we've actually read the header section...
 		if (bmpdata->offset <= 0){
 			if (BMP_VERBOSE){
-				printf("%s.%d\t Data offset not found or null, unable to seek to data section\n", __FILE__, __LINE__);
+				printf("%s.%d\t bmp_ReadImage() Data offset not found or null, unable to seek to data section\n", __FILE__, __LINE__);
 			}
 			return BMP_ERR_READ;
 		}
@@ -290,7 +293,7 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 		} 
 		if (bmpdata->pixels == NULL){
 			if (BMP_VERBOSE){
-				printf("%s.%d\t Unable to allocate memory for pixel data\n", __FILE__, __LINE__);
+				printf("%s.%d\t bmp_ReadImage() Unable to allocate memory for pixel data\n", __FILE__, __LINE__);
 			}
 			return BMP_ERR_MEM;
 		}
@@ -304,7 +307,7 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 		
 		if (BMP_VERBOSE){
 			if (bmpdata->row_padded != bmpdata->row_unpadded){
-				printf("%s.%d\t Need to seek additional %d bytes per row\n", __FILE__, __LINE__, (bmpdata->row_padded - bmpdata->row_unpadded));
+				printf("%s.%d\t bmp_ReadImage() Need to seek additional %d bytes per row\n", __FILE__, __LINE__, (bmpdata->row_padded - bmpdata->row_unpadded));
 			}
 		}
 		
@@ -314,8 +317,8 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 			status = fread(bmp_ptr, 1, bmpdata->row_unpadded, bmp_image);
 			if (status < 1){
 				if (BMP_VERBOSE){
-					printf("%s.%d\t Error reading file at pos %u\n", __FILE__, __LINE__, (unsigned int) ftell(bmp_image));
-					printf("%s.%d\t Error reading %d records, got %d\n", __FILE__, __LINE__, bmpdata->row_unpadded, status);
+					printf("%s.%d\t bmp_ReadImage() Error reading file at pos %u\n", __FILE__, __LINE__, (unsigned int) ftell(bmp_image));
+					printf("%s.%d\t bmp_ReadImage() Error reading %d records, got %d\n", __FILE__, __LINE__, bmpdata->row_unpadded, status);
 				}
 				free(bmpdata->pixels);
 				return BMP_ERR_READ;	
@@ -330,7 +333,7 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 				status = fseek(bmp_image, (bmpdata->row_padded - bmpdata->row_unpadded), SEEK_CUR);
 				if (status != 0){
 					if (BMP_VERBOSE){
-						printf("%s.%d\t Error seeking next row of pixels\n", __FILE__, __LINE__);
+						printf("%s.%d\t bmp_ReadImage() Error seeking next row of pixels\n", __FILE__, __LINE__);
 					}
 					free(bmpdata->pixels);
 					return BMP_ERR_READ;
@@ -367,7 +370,7 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 		// Everything else
 		} else {
 			if (BMP_VERBOSE){
-				printf("%s.%d\t Unsupported byte mode for this pixel depth\n", __FILE__, __LINE__);
+				printf("%s.%d\t bmp_ReadImage() Unsupported byte mode for this pixel depth\n", __FILE__, __LINE__);
 			}
 			free(bmpdata->pixels);
 			return BMP_ERR_BPP;
@@ -428,13 +431,13 @@ int bmp_ReadFont(FILE *bmp_image, bmpdata_t *bmpdata, fontdata_t *fontdata, unsi
 				width_chars = bmpdata->width / font_width;
 				height_chars = bmpdata->height / font_height;
 				if (BMP_VERBOSE){
-					printf("%s.%d\t Font BMP stores %d rows of %d characters (%d total symbols)\n", __FILE__, __LINE__, height_chars, width_chars, (width_chars * height_chars));	
-					printf("%s.%d\t %dbpp font decoded at 0x%x\n", __FILE__, __LINE__, bmpdata->bpp, (unsigned int) &fontdata->symbol);
+					printf("%s.%d\t bmp_ReadFont() Font BMP stores %d rows of %d characters (%d total symbols)\n", __FILE__, __LINE__, height_chars, width_chars, (width_chars * height_chars));	
+					printf("%s.%d\t bmp_ReadFont() %dbpp font decoded at 0x%x\n", __FILE__, __LINE__, bmpdata->bpp, (unsigned int) &fontdata->symbol);
 				}
 				if (bmpdata->bpp == BMP_8BPP){			
 					// For each WxH character in the bitmap image, store each row of bytes
 					if (BMP_VERBOSE){
-						printf("%s.%d\t Starting 8bpp font decoding\n", __FILE__, __LINE__);
+						printf("%s.%d\t bmp_ReadFont() Starting 8bpp font decoding\n", __FILE__, __LINE__);
 					}
 					
 					pos = 0; 		// character/symbol position (0, 1, 2, ... 32)
@@ -445,7 +448,7 @@ int bmp_ReadFont(FILE *bmp_image, bmpdata_t *bmpdata, fontdata_t *fontdata, unsi
 					// For every row of symbols
 					for(h = 0; h < height_chars; h++){
 						if (BMP_VERBOSE){
-							printf("%s.%d\t Decoding font glyph row %d\n", __FILE__, __LINE__, h);
+							printf("%s.%d\t bmp_ReadFont() Decoding font glyph row %d\n", __FILE__, __LINE__, h);
 						}
 						// FOr every symbol in the row
 						for(w = 0; w < width_chars; w++){
@@ -475,7 +478,7 @@ int bmp_ReadFont(FILE *bmp_image, bmpdata_t *bmpdata, fontdata_t *fontdata, unsi
 				} else {
 					// Unsupported bpp for font
 					if (BMP_VERBOSE){
-						printf("%s.%d\t Unsupported font colour depth!\n", __FILE__, __LINE__);
+						printf("%s.%d\t bmp_ReadFont() Unsupported font colour depth!\n", __FILE__, __LINE__);
 					}
 					return BMP_ERR_BPP;
 				}
