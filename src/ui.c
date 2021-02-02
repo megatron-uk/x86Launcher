@@ -42,9 +42,9 @@
 // periodic intervals after having dialogue boxes or menus open.
 bmpdata_t 	*ui_checkbox_bmp;
 bmpdata_t 	*ui_checkbox_empty_bmp;
-bmpdata_t 	*ui_main_bmp;
-bmpdata_t 	*ui_list_bmp;
-bmpdata_t 	*ui_art_bmp;
+bmpdata_t 	*ui_main_bmp;		// We only read the header of this, use gfx_BitmapAsync to display
+bmpdata_t 	*ui_list_bmp;		// We only read the header of this, use gfx_BitmapAsync to display
+bmpdata_t 	*ui_art_bmp;			// We only read the header of this, use gfx_BitmapAsync to display
 bmpdata_t 	*ui_title_bmp;
 bmpdata_t 	*ui_year_bmp;
 bmpdata_t 	*ui_genre_bmp;
@@ -54,13 +54,24 @@ bmpdata_t 	*ui_select_bmp;
 bmpdata_t 	*ui_path_bmp;
 bmpdata_t	*ui_font_bmp;		// Generic, just used during loading each font and then freed
 
+//bmpstate_t structures are needed for anything we don't load in
+// its entirety - ie bitmaps that are too big.
+bmpstate_t 	*ui_main_bmpstate;		// We only read the header, so the bmpstate is used to load, line-by-line
+bmpstate_t 	*ui_list_bmpstate;		// We only read the header, so the bmpstate is used to load, line-by-line
+bmpstate_t 	*ui_art_bmpstate;		// We only read the header, so the bmpstate is used to load, line-by-line
+
 // Fonts
 fontdata_t      *ui_font;
 
-// We should only need one file handle, as we'll load all of the ui
+// We should only need a couple of file handles, as we'll load all of the ui
 // bitmap assets sequentially.... just remember to close it at the 
 // end of each function!
+// One is opened and closed when reading entire bitmap assets
+// The other is opened and closed when reading bmpstate assets line-by-line
 FILE 		*ui_asset_reader;
+FILE			*ui_mainstate_reader;
+FILE			*ui_liststate_reader;
+FILE			*ui_artstate_reader;
 
 // Status of UI asset loading
 static int      ui_fonts_status;
@@ -82,7 +93,7 @@ void ui_Close(){
 	if (ui_assets_status == UI_ASSETS_LOADED){
 		bmp_Destroy(ui_checkbox_bmp);
 		bmp_Destroy(ui_checkbox_empty_bmp);
-		//bmp_Destroy(ui_main_bmp);
+		bmp_Destroy(ui_main_bmp);
 		bmp_Destroy(ui_list_bmp);
 		bmp_Destroy(ui_art_bmp);
 		bmp_Destroy(ui_title_bmp);
@@ -402,7 +413,8 @@ int	ui_DrawMainWindow(){
 	// Initially, we can use a single solid bmp, with all of the ui elements on, but later as we overlay other things on top of it,
 	// we'll need to refresh various individual elements
 	
-	status = gfx_Bitmap(0, 0, ui_main_bmp);
+	//status = gfx_Bitmap(0, 0, ui_main_bmp);
+	status = gfx_BitmapAsyncFull(0, 0, ui_main_bmp, ui_mainstate_reader, ui_main_bmpstate, 0, 1);
 	if (status == 0){
 		return UI_OK;
 	} else {
@@ -504,7 +516,13 @@ int ui_LoadAssets(){
 	// Default to assets not loaded
 	ui_assets_status = UI_ASSETS_MISSING;
 	
-	// list select bmp
+	// We load two types of bitmap assets
+	// Small assets, which we read into memory entirely and can get gfx_Bitmap() to display
+	// Large assets, which we only read the header of, and must use gfx_BitmapAsyncFull() to display
+	
+	// ==============================================
+	// list select bmp - small asset
+	// ==============================================
 	ui_ProgressMessage("Loading browser select icon...");
 	gfx_Flip();
 	if (BMP_VERBOSE){
@@ -512,25 +530,29 @@ int ui_LoadAssets(){
 	}
 	ui_asset_reader = fopen(ui_select, "rb");
 	if (ui_asset_reader == NULL){
+			ui_ProgressMessage("ERROR! Unable to open browser select icon file");
 			return UI_ERR_FILE;     
 	}
 	ui_select_bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
 	if (ui_select_bmp == NULL){
 		printf("%s.%d\t ui_LoadAssets() Unable to allocate memory for browser select icon.\n", __FILE__, __LINE__);
+		ui_ProgressMessage("ERROR! Unable to allocate memory for browser select icon");
 		return UI_ERR_BMP;
 	}
 	
 	ui_select_bmp->pixels = NULL;
 	status = bmp_ReadImage(ui_asset_reader, ui_select_bmp, 1, 1, 1);
 	pal_BMP2Palette(ui_select_bmp, 1);
-	//pal_BMPRemap(ui_checkbox_bmp);
 	if (status != 0){
-			fclose(ui_asset_reader);
-			return UI_ERR_BMP;
+		ui_ProgressMessage("ERROR! Unable to read pixel data for browser select icon");
+		fclose(ui_asset_reader);
+		return UI_ERR_BMP;
 	}
 	fclose(ui_asset_reader);
 	
-	// Checkbox
+	// ==============================================
+	// Checkbox - small asset
+	// ==============================================
 	ui_ProgressMessage("Loading checkbox...");
 	gfx_Flip();
 	if (BMP_VERBOSE){
@@ -538,24 +560,28 @@ int ui_LoadAssets(){
 	}
 	ui_asset_reader = fopen(ui_check_box, "rb");
 	if (ui_asset_reader == NULL){
-			return UI_ERR_FILE;     
+		ui_ProgressMessage("ERROR! Unable to open checkbox icon file");
+		return UI_ERR_FILE;     
 	}
 	ui_checkbox_bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
 	if (ui_checkbox_bmp == NULL){
 		printf("%s.%d\t ui_LoadAssets() Unable to allocate memory for checkbox icon.\n", __FILE__, __LINE__);
+		ui_ProgressMessage("ERROR! Unable to allocate memory of checkbox icon");
 		return UI_ERR_BMP;
 	}
 	ui_checkbox_bmp->pixels = NULL;
 	status = bmp_ReadImage(ui_asset_reader, ui_checkbox_bmp, 1, 1, 1);
 	pal_BMP2Palette(ui_checkbox_bmp, 1);
-	//pal_BMPRemap(ui_checkbox_bmp);
 	if (status != 0){
-			fclose(ui_asset_reader);
-			return UI_ERR_BMP;
+		ui_ProgressMessage("ERROR! Unable to read pixel data for checkbox icon");
+		fclose(ui_asset_reader);
+		return UI_ERR_BMP;
 	}
 	fclose(ui_asset_reader);
 	
-	// Checkbox - empty
+	// ===============================================
+	// Checkbox, empty - small asset
+	// ===============================================
 	ui_ProgressMessage("Loading checkbox (empty) ...");
 	gfx_Flip();
 	if (BMP_VERBOSE){
@@ -563,11 +589,13 @@ int ui_LoadAssets(){
 	}
 	ui_asset_reader = fopen(ui_check_box_unchecked, "rb");
 	if (ui_asset_reader == NULL){
-			return UI_ERR_FILE;     
+		ui_ProgressMessage("ERROR! Unable to open checkbox (empty) icon file");
+		return UI_ERR_FILE;     
 	}
 	ui_checkbox_empty_bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
 	if (ui_checkbox_empty_bmp == NULL){
 		printf("%s.%d\t ui_LoadAssets() Unable to allocate memory for checkbox(empty) icon.\n", __FILE__, __LINE__);
+		ui_ProgressMessage("ERROR! Unable to allocate memory of checkbox (empty) icon");
 		return UI_ERR_BMP;
 	}
 	ui_checkbox_empty_bmp->pixels = NULL;
@@ -576,86 +604,14 @@ int ui_LoadAssets(){
 	//pal_BMPRemap(ui_checkbox_empty_bmp);
 	if (status != 0){
 			fclose(ui_asset_reader);
+			ui_ProgressMessage("ERROR! Unable to read pixel data for checkbox (empty) icon");
 			return UI_ERR_BMP;
 	}
 	fclose(ui_asset_reader);
 	
-	// Main background
-	ui_ProgressMessage("Loading main UI background ...");
-	gfx_Flip();
-	if (BMP_VERBOSE){
-		printf("%s.%d\t ui_LoadAssets() Loading %s\n", __FILE__, __LINE__, ui_main);
-	}
-	ui_asset_reader = fopen(ui_main, "rb");
-	if (ui_asset_reader == NULL){
-			return UI_ERR_FILE;     
-	}
-	ui_main_bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
-	if (ui_main_bmp == NULL){
-		printf("%s.%d\t ui_LoadAssets() Unable to allocate memory for main UI background.\n", __FILE__, __LINE__);
-		return UI_ERR_BMP;
-	}
-	ui_main_bmp->pixels = NULL;
-	status = bmp_ReadImage(ui_asset_reader, ui_main_bmp, 1, 1, 1);
-	pal_BMP2Palette(ui_main_bmp, 1);
-	//pal_BMPRemap(ui_main_bmp);
-	if (status != 0){
-			fclose(ui_asset_reader);
-			return UI_ERR_BMP;
-	}
-	fclose(ui_asset_reader);
-	
-	// List window
-	ui_ProgressMessage("Loading browser background ...");
-	gfx_Flip();
-	if (BMP_VERBOSE){
-		printf("%s.%d\t ui_LoadAssets() Loading %s\n", __FILE__, __LINE__, ui_list_box);
-	}
-	ui_asset_reader = fopen(ui_list_box, "rb");
-	if (ui_asset_reader == NULL){
-			return UI_ERR_FILE;     
-	}
-	ui_list_bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
-	if (ui_list_bmp == NULL){
-		printf("%s.%d\t ui_LoadAssets() Unable to allocate memory for browser list background.\n", __FILE__, __LINE__);
-		return UI_ERR_BMP;
-	}
-	ui_list_bmp->pixels = NULL;
-	status = bmp_ReadImage(ui_asset_reader, ui_list_bmp, 1, 1, 1);
-	pal_BMP2Palette(ui_list_bmp, 1);
-	//pal_BMPRemap(ui_list_bmp);
-	if (status != 0){
-			fclose(ui_asset_reader);
-			return UI_ERR_BMP;
-	}
-	fclose(ui_asset_reader);
-	
-	// Art window
-	ui_ProgressMessage("Loading artwork background ...");
-	gfx_Flip();
-	if (BMP_VERBOSE){
-		printf("%s.%d\t ui_LoadAssets() Loading %s\n", __FILE__, __LINE__, ui_art_box);
-	}
-	ui_asset_reader = fopen(ui_art_box, "rb");
-	if (ui_asset_reader == NULL){
-			return UI_ERR_FILE;     
-	}
-	ui_art_bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
-	if (ui_art_bmp == NULL){
-		printf("%s.%d\t ui_LoadAssets() Unable to allocate memory for artwork background.\n", __FILE__, __LINE__);
-		return UI_ERR_BMP;
-	}
-	ui_art_bmp->pixels = NULL;
-	status = bmp_ReadImage(ui_asset_reader, ui_art_bmp, 1, 1, 1);
-	pal_BMP2Palette(ui_art_bmp, 1);
-	//pal_BMPRemap(ui_art_bmp);
-	if (status != 0){
-			fclose(ui_asset_reader);
-			return UI_ERR_BMP;
-	}
-	fclose(ui_asset_reader);
-	
-	// Game title bar
+	// =========================================
+	// Game title bar - small asset
+	// =========================================
 	ui_ProgressMessage("Loading text entry (title) ...");
 	gfx_Flip();
 	if (BMP_VERBOSE){
@@ -663,24 +619,28 @@ int ui_LoadAssets(){
 	}
 	ui_asset_reader = fopen(ui_title_box, "rb");
 	if (ui_asset_reader == NULL){
-			return UI_ERR_FILE;     
+		ui_ProgressMessage("ERROR! Unable to open title text-file");
+		return UI_ERR_FILE;     
 	}
 	ui_title_bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
 	if (ui_title_bmp == NULL){
 		printf("%s.%d\t ui_LoadAssets() Unable to allocate memory for title text.\n", __FILE__, __LINE__);
+		ui_ProgressMessage("ERROR! Unable to allocate memory for title-text");
 		return UI_ERR_BMP;
 	}
 	ui_title_bmp->pixels = NULL;
 	status = bmp_ReadImage(ui_asset_reader, ui_title_bmp, 1, 1, 1);
 	pal_BMP2Palette(ui_title_bmp, 1);
-	//pal_BMPRemap(ui_title_bmp);
 	if (status != 0){
-			fclose(ui_asset_reader);
-			return UI_ERR_BMP;
+		ui_ProgressMessage("ERROR! Unable to read pixel data for title-text");
+		fclose(ui_asset_reader);
+		return UI_ERR_BMP;
 	}
 	fclose(ui_asset_reader);
 	
-	// Game year bar
+	// =========================================
+	// Game year bar - small asset
+	// =========================================
 	ui_ProgressMessage("Loading text entry (year) ...");
 	gfx_Flip();
 	if (BMP_VERBOSE){
@@ -688,24 +648,28 @@ int ui_LoadAssets(){
 	}
 	ui_asset_reader = fopen(ui_year_box, "rb");
 	if (ui_asset_reader == NULL){
-			return UI_ERR_FILE;     
+		ui_ProgressMessage("ERROR! Unable to open year text-file");
+		return UI_ERR_FILE;     
 	}
 	ui_year_bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
 	if (ui_year_bmp == NULL){
 		printf("%s.%d\t ui_LoadAssets() Unable to allocate memory for year text.\n", __FILE__, __LINE__);
+		ui_ProgressMessage("ERROR! Unable to allocate memory for year-text");
 		return UI_ERR_BMP;
 	}
 	ui_year_bmp->pixels = NULL;
 	status = bmp_ReadImage(ui_asset_reader, ui_year_bmp, 1, 1, 1);
 	pal_BMP2Palette(ui_year_bmp, 1);
-	//pal_BMPRemap(ui_year_bmp);
 	if (status != 0){
-			fclose(ui_asset_reader);
-			return UI_ERR_BMP;
+		fclose(ui_asset_reader);
+		ui_ProgressMessage("ERROR! Unable to read pixel data for year-text");
+		return UI_ERR_BMP;
 	}
 	fclose(ui_asset_reader);
 	
-	// Game genre bar
+	// =========================================
+	// Game genre bar - small asset
+	// =========================================
 	ui_ProgressMessage("Loading text entry (genre) ...");
 	gfx_Flip();
 	if (BMP_VERBOSE){
@@ -713,24 +677,28 @@ int ui_LoadAssets(){
 	}
 	ui_asset_reader = fopen(ui_genre_box, "rb");
 	if (ui_asset_reader == NULL){
-			return UI_ERR_FILE;     
+		ui_ProgressMessage("ERROR! Unable to open genre-text file");
+		return UI_ERR_FILE;     
 	}
 	ui_genre_bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
 	if (ui_genre_bmp == NULL){
 		printf("%s.%d\t ui_LoadAssets() Unable to allocate memory for genre text.\n", __FILE__, __LINE__);
+		ui_ProgressMessage("ERROR! Unable to allocate memory for genre-text");
 		return UI_ERR_BMP;
 	}
 	ui_genre_bmp->pixels = NULL;
 	status = bmp_ReadImage(ui_asset_reader, ui_genre_bmp, 1, 1, 1);
 	pal_BMP2Palette(ui_genre_bmp, 1);
-	//pal_BMPRemap(ui_genre_bmp);
 	if (status != 0){
-			fclose(ui_asset_reader);
-			return UI_ERR_BMP;
+		fclose(ui_asset_reader);
+		ui_ProgressMessage("ERROR! Unable to read pixel data for genre-text");
+		return UI_ERR_BMP;
 	}
 	fclose(ui_asset_reader);
 	
-	// Game company bar
+	// =========================================
+	// Game company bar - small asset
+	// =========================================
 	ui_ProgressMessage("Loading text entry (company) ...");
 	gfx_Flip();
 	if (BMP_VERBOSE){
@@ -738,24 +706,28 @@ int ui_LoadAssets(){
 	}
 	ui_asset_reader = fopen(ui_company_box, "rb");
 	if (ui_asset_reader == NULL){
-			return UI_ERR_FILE;     
+		ui_ProgressMessage("ERROR! Unable to open company-text file");
+		return UI_ERR_FILE;     
 	}
 	ui_company_bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
 	if (ui_company_bmp == NULL){
 		printf("%s.%d\t ui_LoadAssets() Unable to allocate memory for company text.\n", __FILE__, __LINE__);
+		ui_ProgressMessage("ERROR! Unable to allocate memory for company-text");
 		return UI_ERR_BMP;
 	}
 	ui_company_bmp->pixels = NULL;
 	status = bmp_ReadImage(ui_asset_reader, ui_company_bmp, 1, 1, 1);
 	pal_BMP2Palette(ui_company_bmp, 1);
-	//pal_BMPRemap(ui_company_bmp);
 	if (status != 0){
-			fclose(ui_asset_reader);
-			return UI_ERR_BMP;
+		fclose(ui_asset_reader);
+		ui_ProgressMessage("ERROR! Unable to read pixel data for company-text");
+		return UI_ERR_BMP;
 	}
 	fclose(ui_asset_reader);
 	
-	// Game series bar
+	// =========================================
+	// Game series bar - small asset
+	// =========================================
 	ui_ProgressMessage("Loading text entry (series) ...");
 	gfx_Flip();
 	if (BMP_VERBOSE){
@@ -763,25 +735,28 @@ int ui_LoadAssets(){
 	}
 	ui_asset_reader = fopen(ui_series_box, "rb");
 	if (ui_asset_reader == NULL){
-			return UI_ERR_FILE;     
+		ui_ProgressMessage("ERROR! Unable to open series-text file");
+		return UI_ERR_FILE;     
 	}
 	ui_series_bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
 	if (ui_series_bmp == NULL){
 		printf("%s.%d\t ui_LoadAssets() Unable to allocate memory for series text.\n", __FILE__, __LINE__);
+		ui_ProgressMessage("ERROR! Unable to allocate memory for series-text");
 		return UI_ERR_BMP;
 	}
 	ui_series_bmp->pixels = NULL;
 	status = bmp_ReadImage(ui_asset_reader, ui_series_bmp, 1, 1, 1);
 	pal_BMP2Palette(ui_series_bmp, 1);
-	//pal_BMPRemap(ui_series_bmp);
 	if (status != 0){
-			fclose(ui_asset_reader);
-			return UI_ERR_BMP;
+		fclose(ui_asset_reader);
+		ui_ProgressMessage("ERROR! Unable to read pixel data for series-text");
+		return UI_ERR_BMP;
 	}
 	fclose(ui_asset_reader);
 	
-	
-	// Path bar
+	// =========================================
+	// Path bar - small asset
+	// =========================================
 	ui_ProgressMessage("Loading text entry (path) ...");
 	gfx_Flip();
 	if (BMP_VERBOSE){
@@ -789,22 +764,127 @@ int ui_LoadAssets(){
 	}
 	ui_asset_reader = fopen(ui_path_box, "rb");
 	if (ui_asset_reader == NULL){
-			return UI_ERR_FILE;     
+		ui_ProgressMessage("ERROR! Unable to open path-text file");
+		return UI_ERR_FILE;     
 	}
 	ui_path_bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
 	if (ui_path_bmp == NULL){
 		printf("%s.%d\t ui_LoadAssets() Unable to allocate memory for path text.\n", __FILE__, __LINE__);
+		ui_ProgressMessage("ERROR! Unable to allocate memory for path-text");
 		return UI_ERR_BMP;
 	}
 	ui_path_bmp->pixels = NULL;
 	status = bmp_ReadImage(ui_asset_reader, ui_path_bmp, 1, 1, 1);
 	pal_BMP2Palette(ui_path_bmp, 1);
-	//pal_BMPRemap(ui_path_bmp);
 	if (status != 0){
-			fclose(ui_asset_reader);
-			return UI_ERR_BMP;
+		fclose(ui_asset_reader);
+		ui_ProgressMessage("ERROR! Unable to read pixel data for path-text");
+		return UI_ERR_BMP;
 	}
 	fclose(ui_asset_reader);
+	
+	// ===================================================================
+	// LARGE ASSETS BELOW
+	// ===================================================================
+	
+	// ===============================================
+	// Main background - large asset
+	// ===============================================
+	ui_ProgressMessage("Loading main UI background [header only]...");
+	gfx_Flip();
+	if (BMP_VERBOSE){
+		printf("%s.%d\t ui_LoadAssets() Loading %s\n", __FILE__, __LINE__, ui_main);
+	}
+	// 1a. Open file
+	ui_mainstate_reader = fopen(ui_main, "rb");
+	if (ui_mainstate_reader == NULL){
+		ui_ProgressMessage("ERROR! Unable to open main UI bg file");
+		return UI_ERR_FILE;     
+	}
+	// 1b. Allocate enough space for the bitmap header
+	ui_main_bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
+	if (ui_main_bmp == NULL){
+		printf("%s.%d\t ui_DrawSplash() Unable to allocate memory for main UI bg\n", __FILE__, __LINE__);
+		ui_ProgressMessage("ERROR! Unable to allocate memory for main UI bg");
+		fclose(ui_mainstate_reader);
+		return UI_ERR_BMP;
+	}
+	// 1c. Allocate enough space for the state structure and line buffer
+	ui_main_bmpstate = (bmpstate_t *) malloc(sizeof(bmpstate_t));
+	if (ui_main_bmpstate == NULL){
+		printf("%s.%d\t ui_DrawSplash() Unable to allocate memory for main UI bg state\n", __FILE__, __LINE__);
+		ui_ProgressMessage("ERROR! Unable to allocate memory for main UI bg state");
+		fclose(ui_mainstate_reader);
+		bmp_Destroy(ui_main_bmp);
+		return UI_ERR_BMP;
+	}
+	// We DONT read the bitmap data at this point AND the file handle remains open
+	
+	// ===============================================
+	// List window - large asset
+	// ===============================================
+	ui_ProgressMessage("Loading main UI background [header only]...");
+	gfx_Flip();
+	if (BMP_VERBOSE){
+		printf("%s.%d\t ui_LoadAssets() Loading %s\n", __FILE__, __LINE__, ui_list_box);
+	}
+	// 1a. Open file
+	ui_liststate_reader = fopen(ui_list_box, "rb");
+	if (ui_liststate_reader == NULL){
+		ui_ProgressMessage("ERROR! Unable to open browser bg file");
+		return UI_ERR_FILE;     
+	}
+	// 1b. Allocate enough space for the bitmap header
+	ui_list_bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
+	if (ui_list_bmp == NULL){
+		printf("%s.%d\t ui_DrawSplash() Unable to allocate memory for browser bg\n", __FILE__, __LINE__);
+		ui_ProgressMessage("ERROR! Unable to allocate memory for browser bg");
+		fclose(ui_liststate_reader);
+		return UI_ERR_BMP;
+	}
+	// 1c. Allocate enough space for the state structure and line buffer
+	ui_list_bmpstate = (bmpstate_t *) malloc(sizeof(bmpstate_t));
+	if (ui_list_bmpstate == NULL){
+		printf("%s.%d\t ui_DrawSplash() Unable to allocate memory for browser bg state\n", __FILE__, __LINE__);
+		ui_ProgressMessage("ERROR! Unable to allocate memory for browser bg state");
+		fclose(ui_liststate_reader);
+		bmp_Destroy(ui_list_bmp);
+		return UI_ERR_BMP;
+	}
+	// We DONT read the bitmap data at this point AND the file handle remains open
+	
+	// ===============================================
+	// Art window - large asset
+	// ===============================================
+	ui_ProgressMessage("Loading artwork background [header only]...");
+	gfx_Flip();
+	if (BMP_VERBOSE){
+		printf("%s.%d\t ui_LoadAssets() Loading %s\n", __FILE__, __LINE__, ui_art_box);
+	}
+	// 1a. Open file
+	ui_artstate_reader = fopen(ui_art_box, "rb");
+	if (ui_liststate_reader == NULL){
+		ui_ProgressMessage("ERROR! Unable to artwork background file");
+		return UI_ERR_FILE;     
+	}
+	// 1b. Allocate enough space for the bitmap header
+	ui_art_bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
+	if (ui_art_bmp == NULL){
+		printf("%s.%d\t ui_DrawSplash() Unable to allocate memory for artwork bg\n", __FILE__, __LINE__);
+		ui_ProgressMessage("ERROR! Unable to allocate memory for artwork bg");
+		fclose(ui_artstate_reader);
+		return UI_ERR_BMP;
+	}
+	// 1c. Allocate enough space for the state structure and line buffer
+	ui_art_bmpstate = (bmpstate_t *) malloc(sizeof(bmpstate_t));
+	if (ui_art_bmpstate == NULL){
+		printf("%s.%d\t ui_DrawSplash() Unable to allocate memory for artwork bg state\n", __FILE__, __LINE__);
+		ui_ProgressMessage("ERROR! Unable to allocate memory for browser artwork bg state");
+		fclose(ui_artstate_reader);
+		bmp_Destroy(ui_art_bmp);
+		return UI_ERR_BMP;
+	}
+	// We DONT read the bitmap data at this point AND the file handle remains open
 	
 	// Set assets loaded status
 	ui_assets_status = UI_ASSETS_LOADED;
@@ -954,7 +1034,8 @@ int ui_UpdateBrowserPane(state_t *state, gamedata_t *gamedata){
 	}
 	
 	// Clear all lines
-	gfx_Bitmap(ui_browser_panel_x_pos, ui_browser_panel_y_pos, ui_list_bmp);
+	//gfx_Bitmap(ui_browser_panel_x_pos, ui_browser_panel_y_pos, ui_list_bmp);
+	gfx_BitmapAsyncFull(ui_browser_panel_x_pos, ui_browser_panel_y_pos, ui_list_bmp, ui_liststate_reader, ui_list_bmpstate, 0, 0);
 	
 	// Display the entries for this page
 	gamedata_head = gamedata;

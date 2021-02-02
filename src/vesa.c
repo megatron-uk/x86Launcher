@@ -136,6 +136,74 @@ int vesa_HasMode(unsigned short int mode, vbeinfo_t *vbeinfo){
 	
 }
 
+int vesa_SetDAC(unsigned char width){
+	// Set the DAC width for the current mode
+	// width == 6, 8 or more
+	
+	union REGS r;
+	struct SREGS s;
+	
+	if (VESA_VERBOSE){
+		printf("%s.%d\t vesa_SetDAC() Setting VESA DAC mode %dbpp\n", __FILE__, __LINE__, width);
+	}
+	
+	r.x.ax = VESA_DAC_SET;
+	r.h.bl = 0x00;
+	r.h.bh = width;
+	int86(VESA_INTERRUPT, &r, &r);
+	
+	if (r.x.ax != VESA_BIOS_SUCCESS){
+		// VESA BIOS call was not successful
+		if (VESA_VERBOSE){
+			printf("%s.%d\t vesa_SetDAC() Error, Unable to set VESA DAC mode %dbpp [return code 0x%04x]\n", __FILE__, __LINE__, width, r.x.ax);
+		}
+		return -1;	
+	}
+	
+	if (VESA_VERBOSE){
+		printf("%s.%d\t vesa_SetDAC() Successfully set VESA DAC mode %dbpp\n", __FILE__, __LINE__, width);
+	}
+	return 0;
+}
+
+int vesa_GetDAC(unsigned char width){
+	// Check if the given DAC width is currently set
+	// width == 6, 8 or more
+	
+	union REGS r;
+	struct SREGS s;
+	
+	if (VESA_VERBOSE){
+		printf("%s.%d\t vesa_GetDAC() Checking VESA DAC mode for %dbpp\n", __FILE__, __LINE__, width);
+	}
+	
+	r.x.ax = VESA_DAC_SET;
+	r.h.bl = 0x01;
+	int86(VESA_INTERRUPT, &r, &r);
+	
+	if (r.x.ax != VESA_BIOS_SUCCESS){
+		// VESA BIOS call was not successful
+		if (VESA_VERBOSE){
+			printf("%s.%d\t vesa_GetDAC() Error, Unable to check for VESA DAC mode %dbpp [return code 0x%04x]\n", __FILE__, __LINE__, width, r.x.ax);
+		}
+		return -1;	
+	}
+	
+	if (VESA_VERBOSE){
+		if (r.h.bh != width){
+			printf("%s.%d\t vesa_GetDAC() VESA DAC mode is %dbpp, this is WRONG!\n", __FILE__, __LINE__, r.h.bh);
+		} else {
+			printf("%s.%d\t vesa_GetDAC() VESA DAC mode is %dbpp, this is CORRECT!\n", __FILE__, __LINE__, r.h.bh);
+		}
+	}
+	
+	if (r.h.bh != width){
+		return -1;
+	} else {
+		return 0;
+	}
+}
+
 int vesa_SetMode(unsigned short int mode){
 	// Initialise the video hardware at a given VESA mode
 	
@@ -143,7 +211,7 @@ int vesa_SetMode(unsigned short int mode){
 	struct SREGS s;
 	
 	if (VESA_VERBOSE){
-		printf("%s.%d\t Setting VESA mode %xh\n", __FILE__, __LINE__, mode);
+		printf("%s.%d\t vesa_SetMode() Setting VESA mode %xh\n", __FILE__, __LINE__, mode);
 	}
 	
 	r.x.ax = VESA_MODE_SET;
@@ -153,13 +221,13 @@ int vesa_SetMode(unsigned short int mode){
 	if (r.x.ax != VESA_BIOS_SUCCESS){
 		// VESA BIOS call was not successful
 		if (VESA_VERBOSE){
-			printf("%s.%d\t Error, Unable to set VESA mode %xh [return code 0x%04x]\n", __FILE__, __LINE__, mode, r.x.ax);
+			printf("%s.%d\t vesa_SetMode() Error, Unable to set VESA mode %xh [return code 0x%04x]\n", __FILE__, __LINE__, mode, r.x.ax);
 		}
 		return -1;	
 	}
 	
 	if (VESA_VERBOSE){
-		printf("%s.%d\t Successfully set VESA mode %xh\n", __FILE__, __LINE__, mode);
+		printf("%s.%d\t vesa_SetMode() Successfully set VESA mode %xh\n", __FILE__, __LINE__, mode);
 	}
 	return 0;
 }
@@ -179,13 +247,13 @@ int vesa_SetWindow(unsigned short int position){
 	if (r.x.ax != VESA_BIOS_SUCCESS){
 		// VESA BIOS call was not successful
 		if (VESA_VERBOSE){
-			printf("%s.%d\t Error, Unable to set set VESA memory region window to position %d [return code 0x%04x]\n", __FILE__, __LINE__, position, r.x.ax);
+			printf("%s.%d\t vesa_SetWindow() Error, Unable to set set VESA memory region window to position %d [return code 0x%04x]\n", __FILE__, __LINE__, position, r.x.ax);
 		}
 		return -1;	
 	}
 	
 	if (VESA_VERBOSE){
-		printf("%s.%d\t Successfully set VESA window %d\n", __FILE__, __LINE__, position);
+		printf("%s.%d\t vesa_SetWindow() Successfully set VESA window %d\n", __FILE__, __LINE__, position);
 	}
 	
 	return 0;
@@ -194,7 +262,7 @@ int vesa_SetWindow(unsigned short int position){
 void vesa_PrintVBEInfo(vbeinfo_t *vbeinfo){
 	// Print the current contents of the vbeinfo structure
 	
-	printf("%s.%d\t VESA BIOS information follows\n", __FILE__, __LINE__);
+	printf("%s.%d\t vesa_PrintVBEInfo() VESA BIOS information follows\n", __FILE__, __LINE__);
 	printf("VBE Signature:\t %s\n", vbeinfo->vbe_signature);
 	printf("VBE Vendor:\t %s\n", vbeinfo->oem_string_ptr);
 	printf("VBE Version:\t %d\n", vbeinfo->vbe_version);
@@ -202,8 +270,14 @@ void vesa_PrintVBEInfo(vbeinfo_t *vbeinfo){
 	printf("Vendor:	\t %d\n", vbeinfo->oem_vendor_name_ptr);
 	printf("Product:\t %d\n", vbeinfo->oem_product_name_ptr);
 	printf("Version:\t %d\n", vbeinfo->oem_product_rev_ptr);
+	printf("Capabilities:\t %d\n", vbeinfo->capabilities);
+	if (vbeinfo->capabilities & 0x01){
+		printf("DAC Type:\t Switchable, 6bit + other\n");
+	} else {
+		printf("DAC Type:\t Fixed, 6bit\n");
+	}
 	printf("Total RAM:\t %dKB\n", (vbeinfo->total_memory * 64));
-	printf("%s.%d\t End of VESA BIOS information\n", __FILE__, __LINE__);
+	printf("%s.%d\t vesa_PrintVBEInfo() End of VESA BIOS information\n", __FILE__, __LINE__);
 	printf("----------\n");
 }
 
@@ -214,7 +288,7 @@ void vesa_PrintVBEModes(vbeinfo_t *vbeinfo){
 	int i;
 	unsigned short int *modes;
 	
-	printf("%s.%d\t VESA mode list follows\n", __FILE__, __LINE__);
+	printf("%s.%d\t vesa_PrintVBEModes() VESA mode list follows\n", __FILE__, __LINE__);
 	
 	// 'modes' is set to an array of 16bit unsigned integers
 	// as pointed to by the modes list pointer in the vbeinfo object
@@ -223,7 +297,7 @@ void vesa_PrintVBEModes(vbeinfo_t *vbeinfo){
 	for (i = 0; modes[i] != VESA_MODELIST_LAST; i++){
 		printf("Mode %3d: %xh\n", i, modes[i]);
 	}
-	printf("%s.%d\t Found %d VESA modes\n", __FILE__, __LINE__, i);
+	printf("%s.%d\t vesa_PrintVBEModes() Found %d VESA modes\n", __FILE__, __LINE__, i);
 	printf("----------\n");
 }
 
@@ -231,7 +305,7 @@ void vesa_PrintVBEModeInfo(vesamodeinfo_t *modeinfo){
 	// Given a valid modeinfo structure, print the details
 	// of that VESA mode
 	
-	printf("%s.%d\t VESA mode information follows\n", __FILE__, __LINE__);
+	printf("%s.%d\t vesa_PrintVBEModeInfo() VESA mode information follows\n", __FILE__, __LINE__);
 	printf("Resolution\t\t: %d x %d\n", modeinfo->XResolution, modeinfo->YResolution);
 	printf("Colour Depth\t\t: %dbpp\n", modeinfo->BitsPerPixel);
 	printf("Bitplanes\t\t: %d\n", modeinfo->NumberOfPlanes);
@@ -259,5 +333,6 @@ void vesa_PrintVBEModeInfo(vesamodeinfo_t *modeinfo){
 	printf("RsvdMaskSize\t\t: %d\n", modeinfo->RsvdMaskSize);
 	printf("RsvdFieldPosition\t: %d\n", modeinfo->RsvdFieldPosition);
 	printf("DirectColorModeInfo\t: %d\n", modeinfo->DirectColorModeInfo);
+	printf("%s.%d\t vesa_PrintVBEModeInfo() End of VESA mode information\n", __FILE__, __LINE__);
 	printf("----------\n");
 }

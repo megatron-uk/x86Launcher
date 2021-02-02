@@ -111,7 +111,7 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 			}
 			return BMP_ERR_READ;
 		}
-		if (bmpdata->height < 0){
+		if (bmpdata->height < 1){
 			bmpdata->height = abs(bmpdata->height);		
 		}
 		
@@ -131,10 +131,10 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 			}
 			return BMP_ERR_READ;
 		}
-		if ((bmpdata->bpp != BMP_4BPP) && (bmpdata->bpp != BMP_8BPP) && (bmpdata->bpp != BMP_16BPP) && (bmpdata->bpp != BMP_1BPP)){
+		if ((bmpdata->bpp != BMP_8BPP)){
 			if (BMP_VERBOSE){
 				printf("%s.%d\t bmp_ReadImage() Unsupported pixel depth of %dbpp\n", __FILE__, __LINE__, bmpdata->bpp);
-				printf("%s.%d\t bmp_ReadImage() The supported pixel depths are %d and %d\n", __FILE__, __LINE__, BMP_8BPP, BMP_1BPP);
+				printf("%s.%d\t bmp_ReadImage() The supported pixel depths are %d\n", __FILE__, __LINE__, BMP_8BPP);
 			}
 			return BMP_ERR_BPP;
 		}
@@ -185,17 +185,10 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 		// Rows are stored bottom-up
 		// Each row is padded to be a multiple of 4 bytes. 
 		// We calculate the padded row size in bytes
-		if (bmpdata->bpp == BMP_1BPP){
-			bmpdata->row_padded = (int)(4 * ceil((float)(bmpdata->width) / 4.0f)) / 8;
-			bmpdata->row_unpadded = (int) ceil((float)bmpdata->width / 8.0f);
-			bmpdata->size = (int) ceil((bmpdata->width * bmpdata->height) / 8.0f); 
-			bmpdata->n_pixels = bmpdata->size;
-		} else {
-			bmpdata->row_padded = (int)(4 * ceil((float)(bmpdata->width) / 4.0f)) * bmpdata->bytespp; // This needs moving from ceil/floating point!!!!
-			bmpdata->row_unpadded = bmpdata->width * bmpdata->bytespp;
-			bmpdata->size = (bmpdata->width * bmpdata->height * bmpdata->bytespp);
-			bmpdata->n_pixels = bmpdata->width * bmpdata->height;
-		}
+		bmpdata->row_padded = (int)(4 * ceil((float)(bmpdata->width) / 4.0f)) * bmpdata->bytespp; // This needs moving from ceil/floating point!!!!
+		bmpdata->row_unpadded = bmpdata->width * bmpdata->bytespp;
+		bmpdata->size = ((long int) bmpdata->width * (long int) bmpdata->height * (long int) bmpdata->bytespp);
+		bmpdata->n_pixels = (long int) bmpdata->width * (long int) bmpdata->height;
 		
 		if (BMP_VERBOSE){
 			printf("%s.%d\t bmp_ReadImage() Bitmap header loaded ok!\n", __FILE__, __LINE__);
@@ -205,9 +198,9 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 			printf("%s.%d\t bmp_ReadImage() Unpadded row size: %d bytes\n", __FILE__, __LINE__, bmpdata->row_unpadded);
 			printf("%s.%d\t bmp_ReadImage() Colour depth: %dbpp\n", __FILE__, __LINE__, bmpdata->bpp);
 			printf("%s.%d\t bmp_ReadImage() Colour count: %d\n", __FILE__, __LINE__, bmpdata->colours);
-			printf("%s.%d\t bmp_ReadImage() Colour table @ %x\n", __FILE__, __LINE__, bmpdata->colours_offset);
+			printf("%s.%d\t bmp_ReadImage() Colour table @ +%d\n", __FILE__, __LINE__, bmpdata->colours_offset);
 			printf("%s.%d\t bmp_ReadImage() Storage size: %ld bytes\n", __FILE__, __LINE__, bmpdata->size);
-			printf("%s.%d\t bmp_ReadImage() Pixel data @ %x\n", __FILE__, __LINE__, (unsigned int) &bmpdata->pixels);
+			printf("%s.%d\t bmp_ReadImage() Pixel data @ +%d\n", __FILE__, __LINE__, bmpdata->offset);
 		}
 	}
 	
@@ -277,6 +270,10 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 	
 	if (data){
 	
+		if (BMP_VERBOSE){
+			printf("%s.%d\t bmp_ReadImage() Reading %dbpp pixel data...\n", __FILE__, __LINE__, bmpdata->bpp);
+		}
+		
 		// First verify if we've actually read the header section...
 		if (bmpdata->offset <= 0){
 			if (BMP_VERBOSE){
@@ -286,11 +283,7 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 		}
 		
 		// Allocate the total size of the pixel data in bytes		
-		if (bmpdata->bpp == BMP_1BPP){
-			bmpdata->pixels = (unsigned char*) calloc(bmpdata->size, 1);
-		} else {
-			bmpdata->pixels = (unsigned char*) calloc(bmpdata->n_pixels, bmpdata->bytespp);
-		} 
+		bmpdata->pixels = (unsigned char*) calloc(bmpdata->n_pixels, bmpdata->bytespp); 
 		if (bmpdata->pixels == NULL){
 			if (BMP_VERBOSE){
 				printf("%s.%d\t bmp_ReadImage() Unable to allocate memory for pixel data\n", __FILE__, __LINE__);
@@ -346,35 +339,28 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 			}
 			// Else... the fread() already left us at the next row	
 		}		
-		
-		// Swap each pixel to correct endianness (this is for Sharp X68000, which is big-endian)
-		// BMP pixel data is stored little-endian.
-		
+		if (BMP_VERBOSE){
+			printf("%s.%d\t bmp_ReadImage() Read %dbpp pixel data successfully\n", __FILE__, __LINE__, bmpdata->bpp);
+		}
+		/*			
 		// Case 8bpp
 		if (bmpdata->bpp == BMP_8BPP){
 			// We dont need to byteswap 8bpp image data
 			// But we do need to extract palette information
-			return BMP_OK;
-		
-		// Case 4bpp
-		} else if (bmpdata->bpp == BMP_4BPP){
-			// We dont need to byteswap 8bpp image data
-			// But we do need to extract palette information
-			return BMP_OK;
-			
-		// Case 1bpp
-		} else if (bmpdata->bpp == BMP_1BPP){
-			// We dont need to byteswap 1bpp image data
+			if (BMP_VERBOSE){
+				printf("%s.%d\t bmp_ReadImage() Returning valid %dbpp pixel data\n", __FILE__, __LINE__, BMP_8BPP);
+			}
 			return BMP_OK;
 			
 		// Everything else
 		} else {
 			if (BMP_VERBOSE){
-				printf("%s.%d\t bmp_ReadImage() Unsupported byte mode for this pixel depth\n", __FILE__, __LINE__);
+				printf("%s.%d\t bmp_ReadImage() Unsupported byte mode (%d) for this pixel data\n", __FILE__, __LINE__, bmpdata->bpp);
 			}
 			free(bmpdata->pixels);
 			return BMP_ERR_BPP;
 		}
+		*/
 	}
 	return BMP_OK;
 }

@@ -129,7 +129,7 @@ int pal_BMPRemap(bmpdata_t *bmpdata){
 	unsigned char c;
 	int i;
 	long int pos;
-	int px_remapped, colours_remapped, remapped;
+	long int px_remapped, colours_remapped, remapped;
 	
 	px_remapped = 0;
 	colours_remapped = 0;
@@ -154,7 +154,7 @@ int pal_BMPRemap(bmpdata_t *bmpdata){
 		}
 		
 		if (PALETTE_VERBOSE){
-			printf("%s.%d\t pal_BMPRemap() Total of %d pixels remapped\n", __FILE__, __LINE__, px_remapped);
+			printf("%s.%d\t pal_BMPRemap() Total of %ld pixels remapped\n", __FILE__, __LINE__, px_remapped);
 		}
 		return PALETTE_OK;
 	}
@@ -207,11 +207,11 @@ void pal_ResetAll(){
 	}
 	
 	for (i = 0; i < 256; i++){
-		outp(VGA_PALLETE_MASK_ADDR, 0xFF);
-		outp(VGA_PALLETE_SEL_ADDR, i);
-		outp(VGA_PALLETE_SET_ADDR, 0x0);
-		outp(VGA_PALLETE_SET_ADDR, 0x0);
-		outp(VGA_PALLETE_SET_ADDR, 0x0);	
+		outp(VGA_PALETTE_MASK_ADDR, 0xFF);
+		outp(VGA_PALETTE_SEL_ADDR, i);
+		outp(VGA_PALETTE_SET_ADDR, 0x0);
+		outp(VGA_PALETTE_SET_ADDR, 0x0);
+		outp(VGA_PALETTE_SET_ADDR, 0x0);	
 	}
 	
 	reserved_palettes_used = 0;
@@ -230,11 +230,11 @@ void pal_ResetFree(){
 	}
 	
 	for (i = 0; i < PALETTES_FREE; i++){
-		outp(VGA_PALLETE_MASK_ADDR, 0xFF);
-		outp(VGA_PALLETE_SEL_ADDR, i);
-		outp(VGA_PALLETE_SET_ADDR, 0x0);
-		outp(VGA_PALLETE_SET_ADDR, 0x0);
-		outp(VGA_PALLETE_SET_ADDR, 0x0);	
+		outp(VGA_PALETTE_MASK_ADDR, 0xFF);
+		outp(VGA_PALETTE_SEL_ADDR, i);
+		outp(VGA_PALETTE_SET_ADDR, 0x0);
+		outp(VGA_PALETTE_SET_ADDR, 0x0);
+		outp(VGA_PALETTE_SET_ADDR, 0x0);	
 	}
 	
 	free_palettes_used = 0;
@@ -245,15 +245,20 @@ void pal_ResetFree(){
 void pal_Set(unsigned char idx, unsigned char r, unsigned char g, unsigned char b){
 	
 	if (PALETTE_VERBOSE){
-		printf("%s.%d\t pal_Set() Set palette #%3d r:%3d g:%3d b:%3d\n", __FILE__, __LINE__, idx, r, g, b);
+		printf("%s.%d\t pal_Set() Set palette #%3d r:%3d g:%3d b:%3d (DAC mode %dbpp)\n", __FILE__, __LINE__, idx, r, g, b, vga_dac_type);
 	}
 	
-	outp(VGA_PALLETE_MASK_ADDR, 0xFF);
-	outp(VGA_PALLETE_SEL_ADDR, idx);
-	outp(VGA_PALLETE_SET_ADDR, r >> 2);
-	outp(VGA_PALLETE_SET_ADDR, g >> 2);
-	outp(VGA_PALLETE_SET_ADDR, b >> 2);
-	
+	outp(VGA_PALETTE_MASK_ADDR, 0xFF);
+	outp(VGA_PALETTE_SEL_ADDR, idx);
+	if (vga_dac_type == VGA_PALETTE_8BPP){
+		outp(VGA_PALETTE_SET_ADDR, r);
+		outp(VGA_PALETTE_SET_ADDR, g);
+		outp(VGA_PALETTE_SET_ADDR, b);
+	} else {
+		outp(VGA_PALETTE_SET_ADDR, r >> 2);
+		outp(VGA_PALETTE_SET_ADDR, g >> 2);
+		outp(VGA_PALETTE_SET_ADDR, b >> 2);
+	}
 	return;
 }
 
@@ -282,11 +287,11 @@ void pal_Get(){
 	unsigned char r, g, b;
 	
 	for (idx = 0; idx < 256; idx++){
-		outp(VGA_PALLETE_MASK_ADDR, 0xFF);
-		outp(VGA_PALLETE_SEL_ADDR, idx);
-		r = inp(VGA_PALLETE_SET_ADDR);
-		g = inp(VGA_PALLETE_SET_ADDR);
-		b = inp(VGA_PALLETE_SET_ADDR);
+		outp(VGA_PALETTE_MASK_ADDR, 0xFF);
+		outp(VGA_PALETTE_SEL_ADDR, idx);
+		r = inp(VGA_PALETTE_SET_ADDR);
+		g = inp(VGA_PALETTE_SET_ADDR);
+		b = inp(VGA_PALETTE_SET_ADDR);
 		printf("%s.%d\t pal_Get() Get palette #%3d : r:%3d g:%3d b:%3d\n", __FILE__, __LINE__, idx, r, g, b);
 	}
 }

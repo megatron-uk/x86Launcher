@@ -39,15 +39,17 @@
 
 unsigned char __huge	*vram;					// Pointer to a location in the local graphics buffer
 unsigned char __huge	vram_buffer[VRAM_END]; 	// Our local memory graphics buffer, GFX_ROWS * GFX_COLS * GFX_PIXEL_SIZE
-long int window_x_max; 		// How many pixels wide a vesa memory window is
-long int window_y_max; 		// How many pixels deep a vesa memory window is
-long int vga_segment; 		// Base address of the current vesa memory window
-long int windows_in_use;		// Number of video memory windows needed to map our GFX_ROWS * GFX_COLS screen
-long int window_bytes;		// NUmber of bytes in a single vesa memory window (nominally 65536)
+long int window_x_max; 						// How many pixels wide a vesa memory window is
+long int window_y_max; 						// How many pixels deep a vesa memory window is
+long int vga_segment; 						// Base address of the current vesa memory window
+long int windows_in_use;						// Number of video memory windows needed to map our GFX_ROWS * GFX_COLS screen
+long int window_bytes;						// NUmber of bytes in a single vesa memory window (nominally 65536)
 unsigned char *VGA=(unsigned char *)0xA0000000L; // Position of the VGA memory region
+unsigned char vga_dac_type = VGA_PALETTE_6BPP;
 
 int gfx_Init(){
 	// Initialise graphics to a set of configured defaults
+	
 	
 	int status;
 	double window_bytes_t;
@@ -119,6 +121,43 @@ int gfx_Init(){
 		if (GFX_VERBOSE){
 			printf("%s.%d\t gfx_Init() Set VESA mode %xh\n", __FILE__, __LINE__, GFX_VESA_DESIRED);	
 		}
+	}
+	
+	// Set VGA DAC type
+	if (vbeinfo->capabilities & 0x01){
+		if (GFX_VERBOSE){
+			printf("%s.%d\t gfx_Init() Trying to switch VGA DAC to %dbpp\n", __FILE__, __LINE__, VGA_PALETTE_8BPP);	
+		}
+		
+		// DAC is programmable - we need to try to switch it to 8bit mode
+		status = vesa_SetDAC(VGA_PALETTE_8BPP);
+		if (status < 0){
+			if (GFX_VERBOSE){
+				printf("%s.%d\t gfx_Init() Unable to switch VGA DAC, defaulting to %dbpp\n", __FILE__, __LINE__, VGA_PALETTE_DEFAULT);	
+			}
+			vga_dac_type = VGA_PALETTE_6BPP;
+		} else {
+			status = vesa_GetDAC(VGA_PALETTE_8BPP);
+			if (status < 0){
+				// Yes, switched to 8bit mode
+				if (GFX_VERBOSE){
+					printf("%s.%d\t gfx_Init() VGA DAC now in %dbpp\n", __FILE__, __LINE__, VGA_PALETTE_8BPP);	
+				}
+				vga_dac_type = VGA_PALETTE_8BPP;
+			} else {
+				// Switching failed, assume 6bpp
+				if (GFX_VERBOSE){
+					printf("%s.%d\t gfx_Init() Warning, VGA DAC not in desired mode, defaulting to %dbpp\n", __FILE__, __LINE__, VGA_PALETTE_6BPP);	
+				}
+				vga_dac_type = VGA_PALETTE_6BPP;
+			}
+		}
+	} else {
+		// DAC is NON-programmable. Palette entries need to be truncated to 6bpp.
+		if (GFX_VERBOSE){
+			printf("%s.%d\t gfx_Init() VESA BIOS indicates VGA DAC is fixed at 6bpp\n", __FILE__, __LINE__);
+		}
+		vga_dac_type = VGA_PALETTE_6BPP;
 	}
 	
 	// We've set a new video mode, so recalculate

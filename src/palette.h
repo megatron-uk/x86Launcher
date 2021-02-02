@@ -27,10 +27,14 @@
 #define PALETTES_UI				16	// Free to be used by gfx primitives etc
 #define PALETTES_FREE			208	// Free to be used by artwork and screenshots
 
-#define VGA_PALLETE_MASK_ADDR	0x03c6
-#define VGA_PALLETE_GET_ADDR		0x03c7
-#define VGA_PALLETE_SEL_ADDR		0x03c8
-#define VGA_PALLETE_SET_ADDR		0x03c9
+#define VGA_PALETTE_MASK_ADDR	0x03c6
+#define VGA_PALETTE_GET_ADDR		0x03c7
+#define VGA_PALETTE_SEL_ADDR		0x03c8
+#define VGA_PALETTE_SET_ADDR		0x03c9
+
+#define VGA_PALETTE_DEFAULT		6 // Default width of VGA DAC
+#define VGA_PALETTE_6BPP			6
+#define VGA_PALETTE_8BPP			8
 
 #define PALETTE_OK				0
 #define PALETTE_NO_PIXELS		1
@@ -52,6 +56,9 @@
 #define PALETTE_UI_13			PALETTES_FREE + PALETTES_RESERVED + 13
 #define PALETTE_UI_14			PALETTES_FREE + PALETTES_RESERVED + 14
 #define PALETTE_UI_15			PALETTES_FREE + PALETTES_RESERVED + 15
+
+// Globally accessible vga dac type variable - set in gfx.c
+extern unsigned char vga_dac_type;	// Set to 6 for a standard non-switchable DAC, 8 to a DAC that has been switched to 8bit wide mode
 
 int 		pal_BMP2Palette_(bmpdata_t *bmpdata, bmpstate_t *bmpstate, int reserved, int is_full_bmp);
 int 		pal_BMP2Palette(bmpdata_t *bmpdata, int reserved);

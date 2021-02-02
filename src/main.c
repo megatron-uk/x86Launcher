@@ -259,15 +259,15 @@ int main() {
 	status = ui_LoadAssets();
 	if (status != UI_OK){
 		printf("ERROR! Unable to load asset data for user interface!\n");
-		//ui_Close();
+		ui_Close();
 		gfx_Close();
 		return status;
 	}
 	progress += splash_progress_chunk_size;
 	ui_DrawSplashProgress(0, progress);
+	ui_ProgressMessage("All UI assets loaded!");
 	gfx_Flip();
 	delay(1000);
-	return 0;
 		
 	// ======================
 	// Apply any settings from the config file
@@ -277,6 +277,8 @@ int main() {
 	if (strlen(config->dirs) >= 3){
 		status = getDirList(config, gamedir, config->verbose);
 		if (status < 1){
+			ui_ProgressMessage("ERROR! When extracting game search directories!!!");
+			gfx_Flip();
 			printf("%s.%d\t Error when extracting game search directories!!!\n", __FILE__, __LINE__);
 			printf("\n");
 			printf("\n");
@@ -292,15 +294,16 @@ int main() {
 			return -1;
 		}
 	} else {
+		ui_ProgressMessage("ERROR! When loading game search directories!!!");
+		gfx_Flip();
 		printf("%s.%d\t Error when attempting to load game search directories!!!\n", __FILE__, __LINE__);
 		printf("\n");
 		printf("\n");
 		printf("You must have at least one path listed in %s for the gamedirs setting.\n", INIFILE);
-		printf("Remember you can use backslashes OR the Yen symbol in path names.\n");
 		printf("e.g.\n");
 		printf("\n");
 		printf("[defaults]\n");
-		printf("gamedirs=A:\\Games,A:\\MoreGames,C:\\Stuff\\EvenMoreGames\n");
+		printf("gamedirs=C:\\Games,C:\\MoreGames,D:\\Stuff\\EvenMoreGames\n");
 		printf("\n");
 		ui_Close();
 		gfx_Close();
@@ -346,12 +349,11 @@ int main() {
 		ui_ProgressMessage(msg);
 		progress += scrape_progress_chunk_size;
 		ui_DrawSplashProgress(0, progress);
-		gfx_Flip();
-		
-	}	
+		gfx_Flip();		
+	}
 	ui_ProgressMessage("Scraped!");
 	gfx_Flip();
-		
+	
 	// ========================
 	//
 	// No gamedirs were found
@@ -361,6 +363,8 @@ int main() {
 		free(config);
 		free(gamedir);
 		free(gamedata);
+		ui_ProgressMessage("ERROR! No game folders found!!!");
+		gfx_Flip();
 		printf("%s.%d\t Error no game folders found while scraping your directories!!!\n", __FILE__, __LINE__);
 		printf("\n");
 		printf("\n");
@@ -392,7 +396,6 @@ int main() {
 	ui_DrawSplashProgress(0, progress);
 	ui_ProgressMessage("Sorted!");
 	gfx_Flip();
-	
 	
 	// ======================
 	// 
@@ -503,7 +506,9 @@ int main() {
 		free(gamedata);
 		return status;
 	}
-	gfx_Flip();
+	gfx_Flip();	
+	getch();
+	return 0;
 	
 	// Launchdat metadata structure
 	launchdat = (launchdat_t *) malloc(sizeof(launchdat_t));	

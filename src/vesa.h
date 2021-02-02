@@ -15,12 +15,13 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#define VESA_VERBOSE			0		// Enable/disable debug output for this module at compile time.
+#define VESA_VERBOSE			2		// Enable/disable debug output for this module at compile time.
 #define VESA_INTERRUPT		0x10
 #define VESA_BIOS_INFO		0x4F00	// The function number to call INT10 on to return VBE info
 #define VESA_MODE_INFO		0x4F01	// The function number to call INT10 on to retrieve information on a specific VBE mode
 #define VESA_MODE_SET		0x4F02	// The function number to call INT10 on to retrieve information on a specific VBE mode
 #define VESA_WINDOW_SET		0x4F05	// The function number to call INT10 on to remap the active VGA memory window
+#define VESA_DAC_SET			0x4F08	// Get or set the VGA palette DAC width (6bpp/8bpp or more)
 #define VESA_BIOS_SUCCESS	0x004F	// A 'success' code on quering vbeinfo
 #define VESA_MODELIST_LAST	0xFFFF	// The last entry in the VESA BIOS Information mode list array
 
@@ -82,9 +83,11 @@ typedef struct vbeinfo_t {
 	char  				misc_data[512];
 } vbeinfo_t;
 
+int 		vesa_GetDAC(unsigned char width);
 int 		vesa_GetModeInfo(unsigned short mode, vesamodeinfo_t *modeinfo);
 int 		vesa_GetVBEInfo(vbeinfo_t *vbeinfo);
 int		vesa_HasMode(unsigned short mode, vbeinfo_t *vbeinfo);
+int 		vesa_SetDAC(unsigned char width);
 int 		vesa_SetMode(unsigned short int mode);
 int 		vesa_SetWindow(unsigned short int position);
 void 	vesa_PrintVBEInfo(vbeinfo_t *vbeinfo);
