@@ -25,7 +25,7 @@
 #endif
 
 // Enable/disable logging for the ui.c functions
-#define UI_VERBOSE				1
+#define UI_VERBOSE				0
 
 #define splash_logo				"assets\\logo.bmp"
 #define splash_progress_x_pos	100

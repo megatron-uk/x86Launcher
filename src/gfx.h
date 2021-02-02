@@ -20,7 +20,7 @@
 #define __HAS_BMP
 #endif
 
-#define GFX_VERBOSE		1			// Turn on/off gfx-specific debug output
+#define GFX_VERBOSE		0			// Turn on/off gfx-specific debug output
 #define GFX_VESA_DESIRED	0x100		// The default VESA mode we want
 #define GFX_BPP			8			// Colour depth that we want
 #define GFX_BITPLANES	1			// The number of bitplanes we want

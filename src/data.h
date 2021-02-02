@@ -30,7 +30,7 @@
 #define MAX_FILENAME_SIZE    13					// 8 + 3 + 1 for the ., plus 1 for \0
 #define MAX_STRING_SIZE		32
 #define MAX_SEARCHDIRS_SIZE	1024
-#define DATA_VERBOSE			1
+#define DATA_VERBOSE			0
 
 typedef struct gamedata {
 	int gameid;				// Unique ID for this game - assigned at scan time

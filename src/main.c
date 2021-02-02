@@ -194,6 +194,7 @@ int main() {
 	// =======================================
 	if (config->keyboard_test == 1){
 		input_test();
+		return 0;
 	}
 	
 	// ======================
@@ -1100,7 +1101,7 @@ int main() {
 					ui_UpdateInfoPane(state, gamedata, launchdat);
 					ui_UpdateBrowserPaneStatus(state);
 					old_gameid = state->selected_gameid;
-					gfx_Flip();
+					//gfx_Flip();
 	
 					// Display artwork/first screenshot
 					ui_DisplayArtwork(screenshot_file, screenshot_bmp, state, imagefile);

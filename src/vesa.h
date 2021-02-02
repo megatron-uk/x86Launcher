@@ -15,7 +15,7 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#define VESA_VERBOSE			2		// Enable/disable debug output for this module at compile time.
+#define VESA_VERBOSE			0		// Enable/disable debug output for this module at compile time.
 #define VESA_INTERRUPT		0x10
 #define VESA_BIOS_INFO		0x4F00	// The function number to call INT10 on to return VBE info
 #define VESA_MODE_INFO		0x4F01	// The function number to call INT10 on to retrieve information on a specific VBE mode

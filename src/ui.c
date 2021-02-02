@@ -44,7 +44,7 @@ bmpdata_t 	*ui_checkbox_bmp;
 bmpdata_t 	*ui_checkbox_empty_bmp;
 bmpdata_t 	*ui_main_bmp;		// We only read the header of this, use gfx_BitmapAsync to display
 bmpdata_t 	*ui_list_bmp;		// We only read the header of this, use gfx_BitmapAsync to display
-bmpdata_t 	*ui_art_bmp;			// We only read the header of this, use gfx_BitmapAsync to display
+//bmpdata_t 	*ui_art_bmp;			// We only read the header of this, use gfx_BitmapAsync to display
 bmpdata_t 	*ui_title_bmp;
 bmpdata_t 	*ui_year_bmp;
 bmpdata_t 	*ui_genre_bmp;
@@ -58,7 +58,7 @@ bmpdata_t	*ui_font_bmp;		// Generic, just used during loading each font and then
 // its entirety - ie bitmaps that are too big.
 bmpstate_t 	*ui_main_bmpstate;		// We only read the header, so the bmpstate is used to load, line-by-line
 bmpstate_t 	*ui_list_bmpstate;		// We only read the header, so the bmpstate is used to load, line-by-line
-bmpstate_t 	*ui_art_bmpstate;		// We only read the header, so the bmpstate is used to load, line-by-line
+//bmpstate_t 	*ui_art_bmpstate;		// We only read the header, so the bmpstate is used to load, line-by-line
 
 // Fonts
 fontdata_t      *ui_font;
@@ -71,7 +71,7 @@ fontdata_t      *ui_font;
 FILE 		*ui_asset_reader;
 FILE			*ui_mainstate_reader;
 FILE			*ui_liststate_reader;
-FILE			*ui_artstate_reader;
+//FILE			*ui_artstate_reader;
 
 // Status of UI asset loading
 static int      ui_fonts_status;
@@ -95,7 +95,7 @@ void ui_Close(){
 		bmp_Destroy(ui_checkbox_empty_bmp);
 		bmp_Destroy(ui_main_bmp);
 		bmp_Destroy(ui_list_bmp);
-		bmp_Destroy(ui_art_bmp);
+		//bmp_Destroy(ui_art_bmp);
 		bmp_Destroy(ui_title_bmp);
 		bmp_Destroy(ui_year_bmp);
 		bmp_Destroy(ui_genre_bmp);
@@ -122,8 +122,8 @@ int ui_DisplayArtwork(FILE *screenshot_file, bmpdata_t *screenshot_bmp, state_t 
 	}
 	
 	// Clear artwork window
-	gfx_BoxFill(ui_artwork_xpos, ui_artwork_ypos, ui_artwork_xpos + 320, ui_artwork_ypos + 200, PALETTE_UI_BLACK);
-	memset(state->selected_image, '\0', sizeof(state->selected_image)); 
+	//gfx_BoxFill(ui_artwork_xpos, ui_artwork_ypos, ui_artwork_xpos + 320, ui_artwork_ypos + 200, PALETTE_UI_BLACK);
+	//memset(state->selected_image, '\0', sizeof(state->selected_image)); 
 	
 	// Construct full path of image
 	sprintf(msg, "%s\\%s", state->selected_game->path, imagefile->next->filename);
@@ -414,7 +414,7 @@ int	ui_DrawMainWindow(){
 	// we'll need to refresh various individual elements
 	
 	//status = gfx_Bitmap(0, 0, ui_main_bmp);
-	status = gfx_BitmapAsyncFull(0, 0, ui_main_bmp, ui_mainstate_reader, ui_main_bmpstate, 0, 1);
+	status = gfx_BitmapAsyncFull(0, 0, ui_main_bmp, ui_mainstate_reader, ui_main_bmpstate, 1, 1);
 	if (status == 0){
 		return UI_OK;
 	} else {
@@ -462,7 +462,6 @@ int ui_DrawSplash(){
 		return UI_ERR_BMP;
 	}
 	// 1c. Work through the bitmap file, reading one line at a time into the line buffer
-	//status = gfx_BitmapAsyncFull((GFX_COLS / 2) - (logo_bmp->width / 2), (GFX_ROWS / 2) - (logo_bmp->height / 2), logo_bmp, ui_asset_reader, logo_bmpstate, 0);
 	status = gfx_BitmapAsyncFull((GFX_COLS / 2) - 100, 100, logo_bmp, ui_asset_reader, logo_bmpstate, 0, 0);
 	
 	// Destroy any resources
@@ -856,6 +855,7 @@ int ui_LoadAssets(){
 	// ===============================================
 	// Art window - large asset
 	// ===============================================
+	/*
 	ui_ProgressMessage("Loading artwork background [header only]...");
 	gfx_Flip();
 	if (BMP_VERBOSE){
@@ -885,6 +885,7 @@ int ui_LoadAssets(){
 		return UI_ERR_BMP;
 	}
 	// We DONT read the bitmap data at this point AND the file handle remains open
+	*/
 	
 	// Set assets loaded status
 	ui_assets_status = UI_ASSETS_LOADED;
@@ -1035,7 +1036,11 @@ int ui_UpdateBrowserPane(state_t *state, gamedata_t *gamedata){
 	
 	// Clear all lines
 	//gfx_Bitmap(ui_browser_panel_x_pos, ui_browser_panel_y_pos, ui_list_bmp);
-	gfx_BitmapAsyncFull(ui_browser_panel_x_pos, ui_browser_panel_y_pos, ui_list_bmp, ui_liststate_reader, ui_list_bmpstate, 0, 0);
+	
+	//gfx_BitmapAsyncFull(ui_browser_panel_x_pos, ui_browser_panel_y_pos, ui_list_bmp, ui_liststate_reader, ui_list_bmpstate, 1, 1);
+	
+	// Simple black fill
+	gfx_BoxFill(ui_browser_panel_x_pos + 3, ui_browser_panel_y_pos + 3, ui_browser_panel_x_pos + ui_list_bmp->width - 3, ui_browser_panel_y_pos + ui_list_bmp->height - 3, PALETTE_UI_BLACK);
 	
 	// Display the entries for this page
 	gamedata_head = gamedata;

@@ -107,19 +107,18 @@ int pal_BMP2Palette_(bmpdata_t *bmpdata, bmpstate_t *bmpstate, int reserved, int
 		
 	} else {
 		// Set palette entries for the free region (artwork etc)
-		if (free_palettes_used < PALETTES_FREE){
-			for(i = 0; i < bmpdata->colours; i++){
-				if (free_palettes_used < PALETTES_FREE){
-					pal_Set(i, bmpdata->palette[i].r, bmpdata->palette[i].g, bmpdata->palette[i].b);
-					bmpdata->palette[i].new_palette_entry = i;
-					free_palettes_used++;
-				}
-			}			
-			return bmpdata->colours;
-		} else {
-			// Maximum number of palette entries reached	
-			return -1;
-		}
+		//pal_ResetFree();
+		for(i = 0; i < bmpdata->colours; i++){
+			if (free_palettes_used < PALETTES_FREE){
+				pal_Set(i, bmpdata->palette[i].r, bmpdata->palette[i].g, bmpdata->palette[i].b);
+				bmpdata->palette[i].new_palette_entry = i;
+				free_palettes_used++;
+			} else {
+				// Free palettes have been exceeded for this image, so stop
+				return -1;	
+			}
+		}			
+		return bmpdata->colours;
 	}
 }
 
@@ -171,7 +170,7 @@ int pal_BMPStateRemap(bmpdata_t *bmpdata, bmpstate_t *bmpstate){
 	px_remapped = 0;
 	colours_remapped = 0;
 	
-	if (bmpdata->pixels == NULL){
+	if (bmpstate->pixels == NULL){
 		if (PALETTE_VERBOSE){
 			printf("%s.%d\t pal_BMPStateRemap() Unable to remap palette; no pixel data in bmp structure\n", __FILE__, __LINE__);
 		}

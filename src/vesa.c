@@ -144,7 +144,7 @@ int vesa_SetDAC(unsigned char width){
 	struct SREGS s;
 	
 	if (VESA_VERBOSE){
-		printf("%s.%d\t vesa_SetDAC() Setting VESA DAC mode %dbpp\n", __FILE__, __LINE__, width);
+		printf("%s.%d\t vesa_SetDAC() Setting VGA DAC mode %dbpp\n", __FILE__, __LINE__, width);
 	}
 	
 	r.x.ax = VESA_DAC_SET;
@@ -155,13 +155,15 @@ int vesa_SetDAC(unsigned char width){
 	if (r.x.ax != VESA_BIOS_SUCCESS){
 		// VESA BIOS call was not successful
 		if (VESA_VERBOSE){
-			printf("%s.%d\t vesa_SetDAC() Error, Unable to set VESA DAC mode %dbpp [return code 0x%04x]\n", __FILE__, __LINE__, width, r.x.ax);
+			printf("%s.%d\t vesa_SetDAC() Error, Unable to set VGA DAC mode %dbpp [return code 0x%04x]\n", __FILE__, __LINE__, width, r.x.ax);
 		}
 		return -1;	
+	} else {
+		
 	}
 	
 	if (VESA_VERBOSE){
-		printf("%s.%d\t vesa_SetDAC() Successfully set VESA DAC mode %dbpp\n", __FILE__, __LINE__, width);
+		printf("%s.%d\t vesa_SetDAC() Successfully set VGA DAC mode %dbpp (returned %dbpp)\n", __FILE__, __LINE__, width, r.h.bh);
 	}
 	return 0;
 }
@@ -174,7 +176,7 @@ int vesa_GetDAC(unsigned char width){
 	struct SREGS s;
 	
 	if (VESA_VERBOSE){
-		printf("%s.%d\t vesa_GetDAC() Checking VESA DAC mode for %dbpp\n", __FILE__, __LINE__, width);
+		printf("%s.%d\t vesa_GetDAC() Checking VGA DAC mode for %dbpp\n", __FILE__, __LINE__, width);
 	}
 	
 	r.x.ax = VESA_DAC_SET;
@@ -184,16 +186,16 @@ int vesa_GetDAC(unsigned char width){
 	if (r.x.ax != VESA_BIOS_SUCCESS){
 		// VESA BIOS call was not successful
 		if (VESA_VERBOSE){
-			printf("%s.%d\t vesa_GetDAC() Error, Unable to check for VESA DAC mode %dbpp [return code 0x%04x]\n", __FILE__, __LINE__, width, r.x.ax);
+			printf("%s.%d\t vesa_GetDAC() Error, Unable to check for VGA DAC mode %dbpp [return code 0x%04x]\n", __FILE__, __LINE__, width, r.x.ax);
 		}
 		return -1;	
 	}
 	
 	if (VESA_VERBOSE){
 		if (r.h.bh != width){
-			printf("%s.%d\t vesa_GetDAC() VESA DAC mode is %dbpp, this is WRONG!\n", __FILE__, __LINE__, r.h.bh);
+			printf("%s.%d\t vesa_GetDAC() VGA DAC mode is %dbpp, this is WRONG!\n", __FILE__, __LINE__, r.h.bh);
 		} else {
-			printf("%s.%d\t vesa_GetDAC() VESA DAC mode is %dbpp, this is CORRECT!\n", __FILE__, __LINE__, r.h.bh);
+			printf("%s.%d\t vesa_GetDAC() VGA DAC mode is %dbpp, this is CORRECT!\n", __FILE__, __LINE__, r.h.bh);
 		}
 	}
 	

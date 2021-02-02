@@ -154,10 +154,11 @@ int gfx_Init(){
 		}
 	} else {
 		// DAC is NON-programmable. Palette entries need to be truncated to 6bpp.
-		if (GFX_VERBOSE){
-			printf("%s.%d\t gfx_Init() VESA BIOS indicates VGA DAC is fixed at 6bpp\n", __FILE__, __LINE__);
-		}
-		vga_dac_type = VGA_PALETTE_6BPP;
+		//if (GFX_VERBOSE){
+		//	printf("%s.%d\t gfx_Init() VESA BIOS indicates VGA DAC is fixed at 6bpp\n", __FILE__, __LINE__);
+		//}
+		//vga_dac_type = VGA_PALETTE_6BPP;
+		status = vesa_SetDAC(VGA_PALETTE_8BPP);
 	}
 	
 	// We've set a new video mode, so recalculate
@@ -225,12 +226,16 @@ void gfx_Clear(){
 
 void gfx_TextOn(){
 	// Text mode on
-	printf("%s.%d\t gfx_TextOn() Not implemented!\n", __FILE__, __LINE__);
+	if (GFX_VERBOSE){
+		printf("%s.%d\t gfx_TextOn() Not implemented!\n", __FILE__, __LINE__);
+	}
 }
 
 void gfx_TextOff(){
 	// Text mode off
-	printf("%s.%d\t gfx_TextOff() Not implemented!\n", __FILE__, __LINE__);
+	if (GFX_VERBOSE){
+		printf("%s.%d\t gfx_TextOff() Not implemented!\n", __FILE__, __LINE__);
+	}
 }
 
 void gfx_Flip(){
@@ -258,7 +263,7 @@ void gfx_Flip(){
 			}
 			_fmemcpy(VGA, vram, window_bytes - 1);
 			
-			left -= window_bytes;
+			left -= (window_bytes - 1);
 		} else {
 			if (GFX_VERBOSE){
 				printf("%s.%d\t gfx_Flip() Copying remaining %ld bytes to window %d\n", __FILE__, __LINE__, left, window);

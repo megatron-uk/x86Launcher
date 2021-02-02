@@ -17,6 +17,7 @@
 
 #include <stdio.h>
 #include <dos.h>
+#include <conio.h>
 
 #include "input.h"
 
@@ -26,9 +27,46 @@ int input_get(){
 	int k;
 	
 	// Delay loop
-	//delay(KB_DELAY);
+	delay(KB_DELAY);
 	
-	return input_none;
+	if (kbhit()){
+		k = getch();
+		if (k == 0){
+			k = getch();
+		}
+		switch(k){
+			case(input_select):
+				return input_select;
+			case(input_cancel):
+				return input_cancel;
+			case(input_switch):
+				return input_switch;
+			case(input_up):
+				return input_up;
+			case(input_down):
+				return input_down;
+			case(input_left):
+				return input_left;
+			case(input_right):
+				return input_right;
+			case(input_scroll_up):
+				return input_scroll_up;
+			case(input_scroll_down):
+				return input_scroll_down;
+			case(input_quit):
+				return input_quit;
+			case(input_filter):
+				return input_filter;
+			case(input_help):
+				return input_help;
+			default:
+				printf("Unrecognised input: %x\n", k);
+				//return 1;
+				return input_none;
+		}
+	} else {
+		return input_none;
+	}
 }
 
 int input_test(){
@@ -91,6 +129,32 @@ int input_test(){
 		}
 	}
 	exit = 0;
+	printf("Press Page UP\n");
+	while(exit == 0){
+		user_input = input_get();
+		if (user_input != input_none){
+			if (user_input != input_scroll_up){
+				printf("[%x] NOT A MATCH!\n", user_input);
+			} else {
+				printf("[%x] OK\n", user_input);
+			}
+			exit = 1;
+		}
+	}
+	exit = 0;
+	printf("Press Page DOWN\n");
+	while(exit == 0){
+		user_input = input_get();
+		if (user_input != input_none){
+			if (user_input != input_scroll_down){
+				printf("[%x] NOT A MATCH!\n", user_input);
+			} else {
+				printf("[%x] OK\n", user_input);
+			}
+			exit = 1;
+		}
+	}
+	exit = 0;
 	printf("Press ENTER\n");
 	while(exit == 0){
 		user_input = input_get();
@@ -104,11 +168,11 @@ int input_test(){
 		}
 	}
 	exit = 0;
-	printf("Press q, lowercase\n");
+	printf("Press TAB\n");
 	while(exit == 0){
 		user_input = input_get();
 		if (user_input != input_none){
-			if (user_input != input_quit){
+			if (user_input != input_switch){
 				printf("[%x] NOT A MATCH!\n", user_input);
 			} else {
 				printf("[%x] OK\n", user_input);
@@ -117,7 +181,20 @@ int input_test(){
 		}
 	}
 	exit = 0;
-	printf("Press Q, uppercase\n");
+	printf("Press ESCAPE\n");
+	while(exit == 0){
+		user_input = input_get();
+		if (user_input != input_none){
+			if (user_input != input_cancel){
+				printf("[%x] NOT A MATCH!\n", user_input);
+			} else {
+				printf("[%x] OK\n", user_input);
+			}
+			exit = 1;
+		}
+	}
+	exit = 0;
+	printf("Press q, lowercase\n");
 	while(exit == 0){
 		user_input = input_get();
 		if (user_input != input_none){
@@ -143,20 +220,7 @@ int input_test(){
 		}
 	}
 	exit = 0;
-	printf("Press F, uppercase (should be: %x)\n", input_filter);
-	while(exit == 0){
-		user_input = input_get();
-		if (user_input != input_none){
-			if (user_input != input_filter){
-				printf("[%x] NOT A MATCH!\n", user_input);
-			} else {
-				printf("[%x] OK\n", user_input);
-			}
-			exit = 1;
-		}
-	}
-	exit = 0;
-	printf("Press h, lowercase (should be: %x)\n", input_help_lower);
+	printf("Press h, lowercase\n", input_help);
 	while(exit == 0){
 		user_input = input_get();
 		if (user_input != input_none){
@@ -169,17 +233,5 @@ int input_test(){
 		}
 	}
 	exit = 0;
-	printf("Press H, uppercase (should be: %x)\n", input_help);
-	while(exit == 0){
-		user_input = input_get();
-		if (user_input != input_none){
-			if (user_input != input_help){
-				printf("[%x] NOT A MATCH!\n", user_input);
-			} else {
-				printf("[%x] OK\n", user_input);
-			}
-			exit = 1;
-		}
-	}
 	return 0;	
 }
