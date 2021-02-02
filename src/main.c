@@ -267,7 +267,6 @@ int main() {
 	ui_DrawSplashProgress(0, progress);
 	ui_ProgressMessage("All UI assets loaded!");
 	gfx_Flip();
-	delay(1000);
 		
 	// ======================
 	// Apply any settings from the config file
@@ -458,7 +457,6 @@ int main() {
 	// ======================
 	ui_ProgressMessage("Waiting to load main UI...");
 	gfx_Flip();
-	delay(1000);
 		
 	// Also turn any command line text mode off at this point
 	if (config->verbose != 1){
@@ -507,8 +505,6 @@ int main() {
 		return status;
 	}
 	gfx_Flip();	
-	getch();
-	return 0;
 	
 	// Launchdat metadata structure
 	launchdat = (launchdat_t *) malloc(sizeof(launchdat_t));	
