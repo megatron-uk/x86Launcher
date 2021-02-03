@@ -333,6 +333,8 @@ static int configHandler(void* user, const char* section, const char* name, cons
 		config->preload_names =  atoi(value);
 	} else if (MATCH("default", "keyboard_test")){
 		config->keyboard_test =  atoi(value);
+	} else if (MATCH("default", "timers")){
+		config->timers =  atoi(value);
 	} else {
 		return 0;  /* unknown section/name, error */
 	}

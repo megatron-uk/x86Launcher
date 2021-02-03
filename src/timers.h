@@ -1,0 +1,1 @@
+void timers_Print(clock_t start, clock_t end, char* name, int enabled);

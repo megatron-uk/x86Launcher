@@ -182,7 +182,10 @@ int ui_DisplayArtwork(FILE *screenshot_file, bmpdata_t *screenshot_bmp, state_t 
 	if (UI_VERBOSE){
 		printf("%s.%d\t ui_DisplayArtwork() Call to display %s complete\n", __FILE__, __LINE__, imagefile->next->filename);	
 	}
-	fclose(screenshot_file);
+	if (screenshot_file != NULL){
+		fclose(screenshot_file);
+		screenshot_file = NULL;
+	}
 	return UI_OK;
 }
 
@@ -850,6 +853,8 @@ int ui_LoadAssets(){
 		bmp_Destroy(ui_list_bmp);
 		return UI_ERR_BMP;
 	}
+	ui_list_bmp->pixels = NULL;
+	status = bmp_ReadImage(ui_liststate_reader, ui_list_bmp, 1, 0, 0);
 	// We DONT read the bitmap data at this point AND the file handle remains open
 	
 	// ===============================================

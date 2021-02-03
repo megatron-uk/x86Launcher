@@ -682,6 +682,8 @@ int gfx_BoxFill(int x1, int y1, int x2, int y2, unsigned char palette){
 	long int start_addr;	// The first pixel, at x1,y1
 	int temp;		// Holds either x or y, if we need to flip them
 	int step;
+	int size;
+	int stepsize;
 	
 	if (GFX_VERBOSE){
 	   printf("%s.%d\t gfx_BoxFill() Drawing %d,%d-%d,%d with palette %d\n", __FILE__, __LINE__, x1, y1, x2, y2, palette);
@@ -721,14 +723,17 @@ int gfx_BoxFill(int x1, int y1, int x2, int y2, unsigned char palette){
 	// Step to next row in vram
 	step = (GFX_COLS - x2) + (x1 - 1);
 	
+	// Number of bytes to write at a time (row size)
+	size = x2 - x1;
+	
+	// Offset after each memset() call
+	stepsize = step + size + 1;
+	
 	// Starting from the first row (y1)
 	for(row = y1; row <= y2; row++){
-		// Starting from the first column (x1)
-		for(col = x1; col <= x2; col++){
-			*vram = palette;
-			vram++;
-		}
-		vram += step;
+		
+		memset(vram, palette, size);
+		vram += stepsize;
 	}
 	return 0;
 }
@@ -834,9 +839,9 @@ int gfx_Puts(int x, int y, fontdata_t *fontdata, char *c){
 	// Reposition write position
 	vram = vram_buffer + start_offset;
 	
-	if (GFX_VERBOSE){
-		printf("%s.%d\t gfx_Puts() Copying bitmap to vram offset %d\n", __FILE__, __LINE__, vram);
-	}
+	//if (GFX_VERBOSE){
+	//	printf("%s.%d\t gfx_Puts() Copying bitmap to vram offset %d\n", __FILE__, __LINE__, vram);
+	//}
 		
 	if ((fontdata->width == 8) || (fontdata->width == 16)){
 		// For every symbol in the string,

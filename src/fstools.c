@@ -226,7 +226,7 @@ int findDirs(char *path, gamedata_t *gamedata, int startnum, config_t *config){
 							}
 							found++;
 							gamedata = getLastGamedata(gamedata);
-							gamedata->next = (gamedata_t *) malloc(sizeof(gamedata_t));
+							gamedata->next = (gamedata_t *) calloc(sizeof(gamedata_t), 1);
 							gamedata->next->gameid = startnum;
 							gamedata->next->drive =search_drive;
 							strncpy(gamedata->next->path, search_dirname, 65);

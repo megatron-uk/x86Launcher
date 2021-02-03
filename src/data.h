@@ -67,6 +67,7 @@ typedef struct gamedir {
 } gamedir_t;
 
 typedef struct config {
+	int timers;				// Whether to time function calls
 	int verbose;				// Verbose/debug flag
 	int save;					// Save the list of all games to a text file
 	int preload_names;		// Flag to indicate wheter a launch.dat is loaded at scrape-time to pick up real names

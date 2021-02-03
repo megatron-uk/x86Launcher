@@ -20,6 +20,7 @@
 #include <string.h>
 #include <conio.h>
 #include <i86.h>
+#include <time.h>
 
 #ifndef __HAS_DATA
 #include "data.h"
@@ -50,6 +51,7 @@
 #include "ui.h"
 #include "fstools.h"
 #include "filter.h"
+#include "timers.h"
 
 int main() {
 	/* Lets get this show on the road!!! */
@@ -70,6 +72,8 @@ int main() {
 	int verbose;							// Controls output of additional logging/text
 	int status;								// Generic function return status variable
 	char msg[64];							// Message buffer
+	clock_t start_time, end_time, end_time2;
+	clock_t t1, t2;
 	FILE *screenshot_file;
 	FILE *savefile;
 	
@@ -180,6 +184,7 @@ int main() {
 		printf("save=%d\n", config->save);
 		printf("keyboard_test=%d\n", config->keyboard_test);
 		printf("preload_names=%d\n", config->preload_names);
+		printf("timers=%d\n", config->timers);
 		printf("\n");
 		if (config->verbose == 0){
 			printf("Verbose mode is disabled, you will not receive any further logging after this point\n");
@@ -204,7 +209,10 @@ int main() {
 	if (config->verbose){
 		printf("%s.%d\t Now initialising VESA graphics mode\n", __FILE__, __LINE__);
 	}
+	start_time = clock();
 	status = gfx_Init();
+	end_time = clock();
+	timers_Print(start_time, end_time, "GFX Init", config->timers);
 	if (status != 0){
 		printf("%s.%d\t Error unable to initialise graphic mode!!!\n", __FILE__, __LINE__);
 		printf("\n");
@@ -225,7 +233,10 @@ int main() {
 	}
 	
 	// Do basic UI initialisation
-	ui_Init();	
+	start_time = clock();
+	ui_Init();
+	end_time = clock();
+	timers_Print(start_time, end_time, "UI Init", config->timers);
 	status = ui_DrawSplash();
 	if (status != 0){
 		printf("ERROR! Unable to load asset data for initial splash screen!\n");
@@ -240,7 +251,10 @@ int main() {
 	// ======================
 	// Load UI font data
 	// ======================
+	start_time = clock();
 	status = ui_LoadFonts();
+	end_time = clock();
+	timers_Print(start_time, end_time, "Font Loading", config->timers);
 	if (status != UI_OK){
 		printf("ERROR! Unable to load asset data for user interface!\n");
 		ui_Close();
@@ -257,7 +271,10 @@ int main() {
 	// ======================
 	ui_ProgressMessage("Loading UI assets, please wait..");
 	gfx_Flip();
+	start_time = clock();
 	status = ui_LoadAssets();
+	end_time = clock();
+	timers_Print(start_time, end_time, "UI Asset Loading", config->timers);
 	if (status != UI_OK){
 		printf("ERROR! Unable to load asset data for user interface!\n");
 		ui_Close();
@@ -335,6 +352,7 @@ int main() {
 	gfx_Flip();
 	
 	gamedir = config->dir;
+	start_time = clock();
 	while (gamedir->next != NULL){
 		gamedir = gamedir->next;
 		// ======================
@@ -351,6 +369,8 @@ int main() {
 		ui_DrawSplashProgress(0, progress);
 		gfx_Flip();		
 	}
+	end_time = clock();
+	timers_Print(start_time, end_time, "Game Scraping", config->timers);
 	ui_ProgressMessage("Scraped!");
 	gfx_Flip();
 	
@@ -391,7 +411,11 @@ int main() {
 	// =========================
 	sprintf(msg, "Sorting %d games...", found);
 	ui_ProgressMessage(msg);
+	gfx_Flip();
+	start_time = clock();
 	sortGamedata(gamedata, config->verbose);
+	end_time = clock();
+	timers_Print(start_time, end_time, "Game Sorting", config->timers);
 	progress += splash_progress_chunk_size;
 	ui_DrawSplashProgress(0, progress);
 	ui_ProgressMessage("Sorted!");
@@ -426,10 +450,11 @@ int main() {
 	//
 	// ======================
 	if (config->save){
+		
 			sprintf(msg, "Saving game list to %s", SAVEFILE);
 			ui_ProgressMessage(msg);	
 			gfx_Flip();
-			
+			start_time = clock();	
 			savefile = fopen(SAVEFILE, "w");
 			if (savefile == NULL){
 					sprintf(msg, "Warning: Unable to create save file. Press any key.");
@@ -445,6 +470,8 @@ int main() {
 					gamedata = gamedata_head;
 					fclose(savefile);
 			}
+			end_time = clock();
+			timers_Print(start_time, end_time, "Game Saving", config->timers);
 	} else {
 			ui_ProgressMessage("Not saving game list...");
 	}
@@ -467,6 +494,7 @@ int main() {
 	// Clear VRAM buffer ready for main window contents to be drawn
 	gfx_Clear();
 	
+	start_time = clock();
 	// Main UI
 	status = ui_DrawMainWindow();
 	if (status != UI_OK){
@@ -494,6 +522,8 @@ int main() {
 		free(gamedata);
 		return status;
 	}
+	end_time = clock();
+	
 	
 	// Update info with current selection
 	ui_ReselectCurrentGame(state);
@@ -505,7 +535,14 @@ int main() {
 		free(gamedata);
 		return status;
 	}
+	end_time2 = clock();
+	timers_Print(start_time, end_time, "Draw full UI buffer (-info)", config->timers);
+	timers_Print(start_time, end_time2, "Draw full UI buffer (+info)", config->timers);
+	
+	start_time = clock();
 	gfx_Flip();	
+	end_time = clock();
+	timers_Print(start_time, end_time, "Flip GFX buffer", config->timers);
 	
 	// Launchdat metadata structure
 	launchdat = (launchdat_t *) malloc(sizeof(launchdat_t));	
@@ -908,8 +945,11 @@ int main() {
 						state->selected_line--;
 					}
 					// Detect if selected game has changed
+					start_time = clock();
 					ui_ReselectCurrentGame(state);
 					ui_UpdateBrowserPane(state, gamedata);
+					end_time = clock();
+					timers_Print(start_time, end_time, "Scroll Browser Up", config->timers);
 					break;
 				case(input_down):
 					// Down current list by one row
@@ -928,8 +968,11 @@ int main() {
 						state->selected_line++;
 					}
 					// Detect if selected game has changed
+					start_time = clock();
 					ui_ReselectCurrentGame(state);
 					ui_UpdateBrowserPane(state, gamedata);
+					end_time = clock();
+					timers_Print(start_time, end_time, "Scroll Browser Down", config->timers);
 					break;
 				case(input_scroll_up):
 					// Scroll list up by one page
@@ -942,8 +985,11 @@ int main() {
 						state->selected_page--;
 					}
 					state->selected_line = 0;
+					start_time = clock();
 					ui_ReselectCurrentGame(state);
 					ui_UpdateBrowserPane(state, gamedata);
+					end_time = clock();
+					timers_Print(start_time, end_time, "Page Browser Up", config->timers);
 					break;
 				case(input_scroll_down):
 					// Scroll list down by one page
@@ -956,12 +1002,16 @@ int main() {
 						state->selected_page++;
 					}
 					// Reset to line 1 of the new page
-					state->selected_line = 0;	
+					state->selected_line = 0;
+					start_time = clock();
 					ui_ReselectCurrentGame(state);
 					ui_UpdateBrowserPane(state, gamedata);
+					end_time = clock();
+					timers_Print(start_time, end_time, "Page Browser Down", config->timers);
 					break;
 				case(input_left):
 					// Cycle left through artwork
+					start_time = clock();
 					if (imagefile != NULL){
 						if (imagefile->prev != NULL){
 							imagefile = imagefile->prev;
@@ -971,9 +1021,12 @@ int main() {
 						ui_DisplayArtwork(screenshot_file, screenshot_bmp, state, imagefile);
 						gfx_Flip();
 					}
+					end_time = clock();
+					timers_Print(start_time, end_time, "Artwork scroll Left", config->timers);
 					break;
 				case(input_right):
 					// Scroll right through artwork - if available
+					start_time = clock();
 					if (imagefile != NULL){
 						if (imagefile->next != NULL){
 							imagefile = imagefile->next;
@@ -983,6 +1036,8 @@ int main() {
 						ui_DisplayArtwork(screenshot_file, screenshot_bmp, state, imagefile);
 						gfx_Flip();
 					}
+					end_time = clock();
+					timers_Print(start_time, end_time, "Artwork scroll Right", config->timers);
 					break;
 				default:
 					break;
@@ -997,10 +1052,14 @@ int main() {
 			// Only refresh browser, artwork and info panes if the selected game has changed
 			if (old_gameid != state->selected_gameid){
 							
+				start_time = clock();
+				
 				// ======================
 				// Destroy current list of artwork
 				// ======================
+				
 				if (state->has_images == 1){
+					t1 = clock();
 					if (config->verbose){
 						printf("%s.%d\t Previous entry had images, clearing list\n", __FILE__, __LINE__);
 					}
@@ -1012,11 +1071,16 @@ int main() {
 						}
 						free(imagefile);
 					}
+					t2 = clock();
+					timers_Print(t1, t2, "- Clear artwork list", config->timers);
 				}
 				// Clear artwork window
+				t1 = clock();
 				gfx_BoxFill(ui_artwork_xpos, ui_artwork_ypos, ui_artwork_xpos + 320, ui_artwork_ypos + 200, PALETTE_UI_BLACK);
-				memset(state->selected_image, '\0', sizeof(state->selected_image)); 
+				//memset(state->selected_image, '\0', sizeof(state->selected_image)); 
 				state->has_images = 0;
+				t2 = clock();
+				timers_Print(t1, t2, "- Clear artwork window", config->timers);
 				
 				// ======================
 				// Destroy previous launch.dat
@@ -1038,7 +1102,10 @@ int main() {
 				if (config->verbose){
 					printf("%s.%d\t Finding gamedata from list for [%d]\n", __FILE__, __LINE__, state->selected_gameid);
 				}
+				t1 = clock();
 				state->selected_game = getGameid(state->selected_gameid, gamedata);
+				t2 = clock();
+				timers_Print(t1, t2, "- Lookup game", config->timers);
 				if (state->selected_game == NULL){
 					// Could not load gamedata object for this id - why?
 					// Reset to old gameid
@@ -1052,6 +1119,7 @@ int main() {
 						if (config->verbose){
 							printf("%s.%d\t Allocating memory and loading metadata for [%s]\n", __FILE__, __LINE__, state->selected_game->name);
 						}
+						t1 = clock();
 						launchdat = (launchdat_t *) malloc(sizeof(launchdat_t));	
 						status = getLaunchdata(state->selected_game, launchdat);
 						if (status != 0){
@@ -1063,12 +1131,15 @@ int main() {
 						} else {
 							state->has_launchdat = 1;
 						}
+						t2 = clock();
+						timers_Print(t1, t2, "- Load metadata", config->timers);
 					}
 					
 					// ======================
 					// Load list of artwork
 					// ======================
 					if (state->has_launchdat){
+						t1 = clock();
 						if (config->verbose){
 							printf("%s.%d\t Allocating memory for image list\n", __FILE__, __LINE__);
 						}
@@ -1079,6 +1150,8 @@ int main() {
 						if (status > 0){
 							state->has_images = 1;
 						}
+						t2 = clock();
+						timers_Print(t1, t2, "- Process artwork list", config->timers);
 					}
 									
 					// =======================
@@ -1098,18 +1171,26 @@ int main() {
 					// Updating info and browser pane
 					// =======================
 					gamedata = gamedata_head;
+					t1 = clock();
 					ui_UpdateInfoPane(state, gamedata, launchdat);
 					ui_UpdateBrowserPaneStatus(state);
 					old_gameid = state->selected_gameid;
+					t2 = clock();
+					timers_Print(t1, t2, "- Update UI Info pane", config->timers);
 					//gfx_Flip();
 	
 					// Display artwork/first screenshot
+					t1 = clock();
 					ui_DisplayArtwork(screenshot_file, screenshot_bmp, state, imagefile);
 					gfx_Flip();
+					t2 = clock();
+					timers_Print(t1, t2, "- Display artwork", config->timers);
 				}
 				if (config->verbose){
 					printf("%s.%d\t New game successfully loaded\n", __FILE__, __LINE__);
 				}
+				end_time = clock();
+				timers_Print(start_time, end_time, "Redraw New Game", config->timers);
 			}
 		}
 	}

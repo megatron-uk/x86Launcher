@@ -15,7 +15,7 @@ RMFLAGS	= -f -v
 
 # Compile and link flags
 SYSTEM	= dos
-CFLAGS	= -0 -bc -d0 -ox -ml -zq
+CFLAGS	= -2 -bc -d0 -ox -ml -zq
 LDFLAGS =
 LIBS 	=
 INCLUDE	= $(TOOLBASE)/h
@@ -26,7 +26,7 @@ TARGET = launcher.exe
 all: $(TARGET)
 
 # A list of all the object files used in the launcher 
-OBJFILES = obj/bmp.o obj/data.o obj/filter.o obj/fstools.o obj/gfx.o obj/ini.o obj/input.o obj/main.o obj/palette.o obj/ui.o obj/utils.o obj/vesa.o
+OBJFILES = obj/bmp.o obj/data.o obj/filter.o obj/fstools.o obj/gfx.o obj/ini.o obj/input.o obj/main.o obj/palette.o obj/timers.o obj/ui.o obj/utils.o obj/vesa.o
 
 # Link the main launcher target
 $(TARGET): $(OBJFILES)
@@ -59,6 +59,9 @@ obj/main.o: src/main.c
 	
 obj/palette.o: src/palette.c
 	$(CC) $(CFLAGS) -i=$(INCLUDE) src/palette.c -fo=obj/palette.o
+
+obj/timers.o: src/timers.c
+	$(CC) $(CFLAGS) -i=$(INCLUDE) src/timers.c -fo=obj/timers.o
 	
 obj/ui.o: src/ui.c
 	$(CC) $(CFLAGS) -i=$(INCLUDE) src/ui.c -fo=obj/ui.o
