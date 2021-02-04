@@ -133,6 +133,10 @@ int main() {
 	screenshot_bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
 	screenshot_bmp->pixels = NULL;
 	
+	// Screenshot state line buffer
+	screenshot_bmp_state = (bmpstate_t *) malloc(sizeof(bmpstate_t));
+	screenshot_bmp_state->pixels = NULL;
+	
 	/* ************************************** */
 	/* Create an instance of the UI state data */
 	/* ************************************** */
@@ -583,7 +587,7 @@ int main() {
 					ui_ReselectCurrentGame(state);
 					ui_UpdateInfoPane(state, gamedata, launchdat);
 					ui_UpdateBrowserPaneStatus(state);
-					ui_DisplayArtwork(screenshot_file, screenshot_bmp, state, imagefile);
+					ui_DisplayArtwork(screenshot_file, screenshot_bmp, screenshot_bmp_state, state, imagefile);
 					gfx_Flip();
 					break;
 				case(input_select):
@@ -627,7 +631,7 @@ int main() {
 					ui_ReselectCurrentGame(state);
 					ui_UpdateInfoPane(state, gamedata, launchdat);
 					ui_UpdateBrowserPaneStatus(state);
-					ui_DisplayArtwork(screenshot_file, screenshot_bmp, state, imagefile);
+					ui_DisplayArtwork(screenshot_file, screenshot_bmp, screenshot_bmp_state, state, imagefile);
 					gfx_Flip();
 					break;
 				case(input_up):
@@ -721,7 +725,7 @@ int main() {
 						ui_ReselectCurrentGame(state);
 						ui_UpdateInfoPane(state, gamedata, launchdat);
 						ui_UpdateBrowserPaneStatus(state);
-						ui_DisplayArtwork(screenshot_file, screenshot_bmp, state, imagefile);
+						ui_DisplayArtwork(screenshot_file, screenshot_bmp, screenshot_bmp_state, state, imagefile);
 						gfx_Flip();
 						user_input = input_get();
 					} else {
@@ -762,7 +766,7 @@ int main() {
 					ui_ReselectCurrentGame(state);
 					ui_UpdateInfoPane(state, gamedata, launchdat);
 					ui_UpdateBrowserPaneStatus(state);
-					ui_DisplayArtwork(screenshot_file, screenshot_bmp, state, imagefile);
+					ui_DisplayArtwork(screenshot_file, screenshot_bmp, screenshot_bmp_state, state, imagefile);
 					gfx_Flip();
 					break;
 				default:
@@ -824,7 +828,7 @@ int main() {
 					ui_ReselectCurrentGame(state);
 					ui_UpdateInfoPane(state, gamedata, launchdat);
 					ui_UpdateBrowserPaneStatus(state);
-					ui_DisplayArtwork(screenshot_file, screenshot_bmp, state, imagefile);
+					ui_DisplayArtwork(screenshot_file, screenshot_bmp, screenshot_bmp_state, state, imagefile);
 					gfx_Flip();
 					user_input = input_get();
 					break;
@@ -843,7 +847,7 @@ int main() {
 					ui_ReselectCurrentGame(state);
 					ui_UpdateInfoPane(state, gamedata, launchdat);
 					ui_UpdateBrowserPaneStatus(state);
-					ui_DisplayArtwork(screenshot_file, screenshot_bmp, state, imagefile);
+					ui_DisplayArtwork(screenshot_file, screenshot_bmp, screenshot_bmp_state, state, imagefile);
 					gfx_Flip();
 					break;
 				default:
@@ -1018,7 +1022,7 @@ int main() {
 						} else {
 							imagefile = imagefile_head;
 						}
-						ui_DisplayArtwork(screenshot_file, screenshot_bmp, state, imagefile);
+						ui_DisplayArtwork(screenshot_file, screenshot_bmp, screenshot_bmp_state, state, imagefile);
 						gfx_Flip();
 					}
 					end_time = clock();
@@ -1033,7 +1037,7 @@ int main() {
 						} else {
 							imagefile = imagefile_head;
 						}
-						ui_DisplayArtwork(screenshot_file, screenshot_bmp, state, imagefile);
+						ui_DisplayArtwork(screenshot_file, screenshot_bmp, screenshot_bmp_state, state, imagefile);
 						gfx_Flip();
 					}
 					end_time = clock();
@@ -1181,7 +1185,7 @@ int main() {
 	
 					// Display artwork/first screenshot
 					t1 = clock();
-					ui_DisplayArtwork(screenshot_file, screenshot_bmp, state, imagefile);
+					ui_DisplayArtwork(screenshot_file, screenshot_bmp, screenshot_bmp_state, state, imagefile);
 					gfx_Flip();
 					t2 = clock();
 					timers_Print(t1, t2, "- Display artwork", config->timers);

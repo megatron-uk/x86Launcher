@@ -26,7 +26,7 @@
 #define BMP_8BPP					8	
 #define BMP_16BPP				16
 #define BMP_UNCOMPRESSED			0
-#define BMP_VERBOSE				0 // Enable BMP specific debug/verbose output
+#define BMP_VERBOSE				1 // Enable BMP specific debug/verbose output
 #define BMP_OK					0 // BMP loaded and decode okay
 #define BMP_ERR_NOFILE			-1 // Cannot find file
 #define BMP_ERR_SIZE				-2 // Height/Width outside bounds

@@ -44,7 +44,6 @@ bmpdata_t 	*ui_checkbox_bmp;
 bmpdata_t 	*ui_checkbox_empty_bmp;
 bmpdata_t 	*ui_main_bmp;		// We only read the header of this, use gfx_BitmapAsync to display
 bmpdata_t 	*ui_list_bmp;		// We only read the header of this, use gfx_BitmapAsync to display
-//bmpdata_t 	*ui_art_bmp;			// We only read the header of this, use gfx_BitmapAsync to display
 bmpdata_t 	*ui_title_bmp;
 bmpdata_t 	*ui_year_bmp;
 bmpdata_t 	*ui_genre_bmp;
@@ -57,8 +56,6 @@ bmpdata_t	*ui_font_bmp;		// Generic, just used during loading each font and then
 //bmpstate_t structures are needed for anything we don't load in
 // its entirety - ie bitmaps that are too big.
 bmpstate_t 	*ui_main_bmpstate;		// We only read the header, so the bmpstate is used to load, line-by-line
-bmpstate_t 	*ui_list_bmpstate;		// We only read the header, so the bmpstate is used to load, line-by-line
-//bmpstate_t 	*ui_art_bmpstate;		// We only read the header, so the bmpstate is used to load, line-by-line
 
 // Fonts
 fontdata_t      *ui_font;
@@ -70,8 +67,6 @@ fontdata_t      *ui_font;
 // The other is opened and closed when reading bmpstate assets line-by-line
 FILE 		*ui_asset_reader;
 FILE			*ui_mainstate_reader;
-FILE			*ui_liststate_reader;
-//FILE			*ui_artstate_reader;
 
 // Status of UI asset loading
 static int      ui_fonts_status;
@@ -95,7 +90,6 @@ void ui_Close(){
 		bmp_Destroy(ui_checkbox_empty_bmp);
 		bmp_Destroy(ui_main_bmp);
 		bmp_Destroy(ui_list_bmp);
-		//bmp_Destroy(ui_art_bmp);
 		bmp_Destroy(ui_title_bmp);
 		bmp_Destroy(ui_year_bmp);
 		bmp_Destroy(ui_genre_bmp);
@@ -106,7 +100,7 @@ void ui_Close(){
 	}
 }
 
-int ui_DisplayArtwork(FILE *screenshot_file, bmpdata_t *screenshot_bmp, state_t *state, imagefile_t *imagefile){
+int ui_DisplayArtwork(FILE *screenshot_file, bmpdata_t *screenshot_bmp, bmpstate_t *screenshot_state, state_t *state, imagefile_t *imagefile){
 
 	int status;
 	int has_screenshot;
@@ -150,33 +144,14 @@ int ui_DisplayArtwork(FILE *screenshot_file, bmpdata_t *screenshot_bmp, state_t 
 		// Load header of screenshot bmp
 		// =======================
 		if (UI_VERBOSE){
-			printf("%s.%d\t ui_DisplayArtwork() Reading BMP data\n", __FILE__, __LINE__);	
+			printf("%s.%d\t ui_DisplayArtwork() Reading BMP header\n", __FILE__, __LINE__);	
 		}
-		status = bmp_ReadImage(screenshot_file, screenshot_bmp, 1, 1, 1);
-		if (status != 0){
-			if (UI_VERBOSE){
-				printf("%s.%d\t ui_DisplayArtwork() Error, BMP read call returned error\n", __FILE__, __LINE__);	
-			}
-			has_screenshot = 0;
-		} else {
-			has_screenshot = 1;	
-		}
+		status = bmp_ReadImage(screenshot_file, screenshot_bmp, 1, 0, 0);
+		has_screenshot = 1;	
 		if (has_screenshot){
-			// Reset free palette region
-			if (UI_VERBOSE){
-				printf("%s.%d\t ui_DisplayArtwork() Resetting free palette region entries\n", __FILE__, __LINE__);	
-			}
-			pal_ResetFree();
-			// Set free palette region
-			if (UI_VERBOSE){
-				printf("%s.%d\t ui_DisplayArtwork() Setting new palette entries\n", __FILE__, __LINE__);	
-			}
-			pal_BMP2Palette(screenshot_bmp, 0);
-			// Display bitmap
-			if (UI_VERBOSE){
-				printf("%s.%d\t ui_DisplayArtwork() Rendering BMP to buffer\n", __FILE__, __LINE__);	
-			}
-			gfx_Bitmap(ui_artwork_xpos + ((320 - screenshot_bmp->width) / 2) , ui_artwork_ypos + ((200 - screenshot_bmp->height) / 2), screenshot_bmp);
+			screenshot_state->rows_remaining = screenshot_bmp->height;
+				//status = gfx_Bitmap(ui_artwork_xpos + ((320 - screenshot_bmp->width) / 2) , ui_artwork_ypos + ((200 - screenshot_bmp->height) / 2), screenshot_bmp);
+			status = gfx_BitmapAsyncFull(ui_artwork_xpos + ((320 - screenshot_bmp->width) / 2) , ui_artwork_ypos + ((200 - screenshot_bmp->height) / 2), screenshot_bmp, ui_asset_reader, screenshot_state, 0, 0);
 		}
 	}
 	if (UI_VERBOSE){
@@ -792,7 +767,7 @@ int ui_LoadAssets(){
 	// ===============================================
 	// Main background - large asset
 	// ===============================================
-	ui_ProgressMessage("Loading main UI background [header only]...");
+	ui_ProgressMessage("Loading main UI bg [header only]...");
 	gfx_Flip();
 	if (BMP_VERBOSE){
 		printf("%s.%d\t ui_LoadAssets() Loading %s\n", __FILE__, __LINE__, ui_main);
@@ -825,14 +800,14 @@ int ui_LoadAssets(){
 	// ===============================================
 	// List window - large asset
 	// ===============================================
-	ui_ProgressMessage("Loading main UI background [header only]...");
+	ui_ProgressMessage("Loading UI browser bg [header only]...");
 	gfx_Flip();
 	if (BMP_VERBOSE){
 		printf("%s.%d\t ui_LoadAssets() Loading %s\n", __FILE__, __LINE__, ui_list_box);
 	}
 	// 1a. Open file
-	ui_liststate_reader = fopen(ui_list_box, "rb");
-	if (ui_liststate_reader == NULL){
+	ui_asset_reader = fopen(ui_list_box, "rb");
+	if (ui_asset_reader == NULL){
 		ui_ProgressMessage("ERROR! Unable to open browser bg file");
 		return UI_ERR_FILE;     
 	}
@@ -841,56 +816,18 @@ int ui_LoadAssets(){
 	if (ui_list_bmp == NULL){
 		printf("%s.%d\t ui_DrawSplash() Unable to allocate memory for browser bg\n", __FILE__, __LINE__);
 		ui_ProgressMessage("ERROR! Unable to allocate memory for browser bg");
-		fclose(ui_liststate_reader);
-		return UI_ERR_BMP;
-	}
-	// 1c. Allocate enough space for the state structure and line buffer
-	ui_list_bmpstate = (bmpstate_t *) malloc(sizeof(bmpstate_t));
-	if (ui_list_bmpstate == NULL){
-		printf("%s.%d\t ui_DrawSplash() Unable to allocate memory for browser bg state\n", __FILE__, __LINE__);
-		ui_ProgressMessage("ERROR! Unable to allocate memory for browser bg state");
-		fclose(ui_liststate_reader);
-		bmp_Destroy(ui_list_bmp);
+		fclose(ui_asset_reader);
 		return UI_ERR_BMP;
 	}
 	ui_list_bmp->pixels = NULL;
-	status = bmp_ReadImage(ui_liststate_reader, ui_list_bmp, 1, 0, 0);
-	// We DONT read the bitmap data at this point AND the file handle remains open
-	
-	// ===============================================
-	// Art window - large asset
-	// ===============================================
-	/*
-	ui_ProgressMessage("Loading artwork background [header only]...");
-	gfx_Flip();
-	if (BMP_VERBOSE){
-		printf("%s.%d\t ui_LoadAssets() Loading %s\n", __FILE__, __LINE__, ui_art_box);
-	}
-	// 1a. Open file
-	ui_artstate_reader = fopen(ui_art_box, "rb");
-	if (ui_liststate_reader == NULL){
-		ui_ProgressMessage("ERROR! Unable to artwork background file");
-		return UI_ERR_FILE;     
-	}
-	// 1b. Allocate enough space for the bitmap header
-	ui_art_bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
-	if (ui_art_bmp == NULL){
-		printf("%s.%d\t ui_DrawSplash() Unable to allocate memory for artwork bg\n", __FILE__, __LINE__);
-		ui_ProgressMessage("ERROR! Unable to allocate memory for artwork bg");
-		fclose(ui_artstate_reader);
+	status = bmp_ReadImage(ui_asset_reader, ui_list_bmp, 1, 0, 0);
+	if (status != 0){
+		fclose(ui_asset_reader);
+		ui_ProgressMessage("ERROR! Unable to read header for browser bg");
 		return UI_ERR_BMP;
 	}
-	// 1c. Allocate enough space for the state structure and line buffer
-	ui_art_bmpstate = (bmpstate_t *) malloc(sizeof(bmpstate_t));
-	if (ui_art_bmpstate == NULL){
-		printf("%s.%d\t ui_DrawSplash() Unable to allocate memory for artwork bg state\n", __FILE__, __LINE__);
-		ui_ProgressMessage("ERROR! Unable to allocate memory for browser artwork bg state");
-		fclose(ui_artstate_reader);
-		bmp_Destroy(ui_art_bmp);
-		return UI_ERR_BMP;
-	}
+	fclose(ui_asset_reader);
 	// We DONT read the bitmap data at this point AND the file handle remains open
-	*/
 	
 	// Set assets loaded status
 	ui_assets_status = UI_ASSETS_LOADED;

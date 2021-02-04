@@ -25,7 +25,7 @@
 #endif
 
 // Enable/disable logging for the ui.c functions
-#define UI_VERBOSE				0
+#define UI_VERBOSE				1
 
 #define splash_logo				"assets\\logo.bmp"
 #define splash_progress_x_pos	100
@@ -201,7 +201,7 @@ int		ui_DrawSplash();
 int		ui_DrawSplashProgress();
 int		ui_DrawStatusBar();
 int		ui_DrawTextPanel(int x, int y, int width);
-int		ui_DisplayArtwork(FILE *screenshot_file, bmpdata_t *screenshot_bmp, state_t *state, imagefile_t *imagefile);
+int		ui_DisplayArtwork(FILE *screenshot_file, bmpdata_t *screenshot_bmp, bmpstate_t *screenshot_state, state_t *state, imagefile_t *imagefile);
 
 // Asset loaders
 int		ui_LoadAssets();
