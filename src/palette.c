@@ -107,7 +107,6 @@ int pal_BMP2Palette_(bmpdata_t *bmpdata, bmpstate_t *bmpstate, int reserved, int
 		
 	} else {
 		// Set palette entries for the free region (artwork etc)
-		//pal_ResetFree();
 		for(i = 0; i < bmpdata->colours; i++){
 			if (free_palettes_used < PALETTES_FREE){
 				pal_Set(i, bmpdata->palette[i].r, bmpdata->palette[i].g, bmpdata->palette[i].b);

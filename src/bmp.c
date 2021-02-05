@@ -219,6 +219,14 @@ int bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, uns
 			return BMP_ERR_READ;
 		}
 		
+		// Reset palette table in this bitmap structure
+		for(i = 0; i < 256; i++){
+			bmpdata->palette[i].r = 0;
+			bmpdata->palette[i].g = 0;
+			bmpdata->palette[i].b = 0;
+			bmpdata->palette[i].new_palette_entry = i;	
+		}
+		
 		for(i = 0; i < bmpdata->colours; i++){
 			status = fseek(bmp_image, bmpdata->colours_offset + (i * 4), SEEK_SET);
 			if (status != 0){

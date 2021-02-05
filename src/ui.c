@@ -116,8 +116,7 @@ int ui_DisplayArtwork(FILE *screenshot_file, bmpdata_t *screenshot_bmp, bmpstate
 	}
 	
 	// Clear artwork window
-	//gfx_BoxFill(ui_artwork_xpos, ui_artwork_ypos, ui_artwork_xpos + 320, ui_artwork_ypos + 200, PALETTE_UI_BLACK);
-	//memset(state->selected_image, '\0', sizeof(state->selected_image)); 
+	gfx_BoxFill(ui_artwork_xpos, ui_artwork_ypos, ui_artwork_xpos + ui_artwork_width, ui_artwork_ypos + ui_artwork_height, PALETTE_UI_BLACK);
 	
 	// Construct full path of image
 	sprintf(msg, "%s\\%s", state->selected_game->path, imagefile->next->filename);
@@ -146,12 +145,12 @@ int ui_DisplayArtwork(FILE *screenshot_file, bmpdata_t *screenshot_bmp, bmpstate
 		if (UI_VERBOSE){
 			printf("%s.%d\t ui_DisplayArtwork() Reading BMP header\n", __FILE__, __LINE__);	
 		}
-		status = bmp_ReadImage(screenshot_file, screenshot_bmp, 1, 0, 0);
+		pal_ResetFree();
+		status = bmp_ReadImage(screenshot_file, screenshot_bmp, 1, 1, 0);
 		has_screenshot = 1;	
 		if (has_screenshot){
 			screenshot_state->rows_remaining = screenshot_bmp->height;
-				//status = gfx_Bitmap(ui_artwork_xpos + ((320 - screenshot_bmp->width) / 2) , ui_artwork_ypos + ((200 - screenshot_bmp->height) / 2), screenshot_bmp);
-			status = gfx_BitmapAsyncFull(ui_artwork_xpos + ((320 - screenshot_bmp->width) / 2) , ui_artwork_ypos + ((200 - screenshot_bmp->height) / 2), screenshot_bmp, ui_asset_reader, screenshot_state, 0, 0);
+			status = gfx_BitmapAsyncFull(ui_artwork_xpos + ((ui_artwork_width - screenshot_bmp->width) / 2) , ui_artwork_ypos + ((ui_artwork_height - screenshot_bmp->height) / 2), screenshot_bmp, ui_asset_reader, screenshot_state, 0, 0);
 		}
 	}
 	if (UI_VERBOSE){
@@ -168,7 +167,7 @@ int	ui_DrawConfirmPopup(state_t *state, gamedata_t *gamedata, launchdat_t *launc
 	// Draw a confirmation box to start the game
 	
 	// Draw drop-shadow
-	gfx_BoxFillTranslucent(ui_launch_popup_xpos + 60, ui_launch_popup_ypos - 30, ui_launch_popup_xpos + 260, ui_launch_popup_ypos + 50, PALETTE_UI_DGREY);
+	//gfx_BoxFillTranslucent(ui_launch_popup_xpos + 60, ui_launch_popup_ypos - 30, ui_launch_popup_xpos + 260, ui_launch_popup_ypos + 50, PALETTE_UI_DGREY);
 	
 	// Draw main box
 	gfx_BoxFill(ui_launch_popup_xpos + 50, ui_launch_popup_ypos - 40, ui_launch_popup_xpos + 250, ui_launch_popup_ypos + 40, PALETTE_UI_BLACK);
@@ -189,7 +188,7 @@ int ui_DrawFilterPrePopup(state_t *state, int toggle){
 	// Draw a popup that allows the user to toggle filter mode between genre, series and off
 
 	// Draw drop-shadow
-	gfx_BoxFillTranslucent(ui_launch_popup_xpos + 10, ui_launch_popup_ypos + 10, ui_launch_popup_xpos + 10 + ui_launch_popup_width, ui_launch_popup_ypos + 10 + ui_launch_popup_height + 30, PALETTE_UI_DGREY);
+	//gfx_BoxFillTranslucent(ui_launch_popup_xpos + 10, ui_launch_popup_ypos + 10, ui_launch_popup_xpos + 10 + ui_launch_popup_width, ui_launch_popup_ypos + 10 + ui_launch_popup_height + 30, PALETTE_UI_DGREY);
 	
 	// Draw main box
 	gfx_BoxFill(ui_launch_popup_xpos, ui_launch_popup_ypos, ui_launch_popup_xpos + ui_launch_popup_width, ui_launch_popup_ypos + ui_launch_popup_height + 30, PALETTE_UI_BLACK);
@@ -251,7 +250,7 @@ int ui_DrawFilterPopup(state_t *state, int toggle){
 	int status;
 	
 	// Draw drop-shadow
-	gfx_BoxFillTranslucent(40, 50, GFX_COLS - 30, GFX_ROWS - 20, PALETTE_UI_DGREY);
+	//gfx_BoxFillTranslucent(40, 50, GFX_COLS - 30, GFX_ROWS - 20, PALETTE_UI_DGREY);
 	
 	// Draw main box
 	gfx_BoxFill(30, 40, GFX_COLS - 40, GFX_ROWS - 40, PALETTE_UI_BLACK);
@@ -349,7 +348,7 @@ int	ui_DrawLaunchPopup(state_t *state, gamedata_t *gamedata, launchdat_t *launch
 	int status;	
 	
 	// Draw drop-shadow
-	gfx_BoxFillTranslucent(ui_launch_popup_xpos + 10, ui_launch_popup_ypos + 10, ui_launch_popup_xpos + 10 + ui_launch_popup_width, ui_launch_popup_ypos + 10 + ui_launch_popup_height, PALETTE_UI_DGREY);
+	//gfx_BoxFillTranslucent(ui_launch_popup_xpos + 10, ui_launch_popup_ypos + 10, ui_launch_popup_xpos + 10 + ui_launch_popup_width, ui_launch_popup_ypos + 10 + ui_launch_popup_height, PALETTE_UI_DGREY);
 	
 	// Draw main box
 	gfx_BoxFill(ui_launch_popup_xpos, ui_launch_popup_ypos, ui_launch_popup_xpos + ui_launch_popup_width, ui_launch_popup_ypos + ui_launch_popup_height, PALETTE_UI_BLACK);
@@ -440,7 +439,7 @@ int ui_DrawSplash(){
 		return UI_ERR_BMP;
 	}
 	// 1c. Work through the bitmap file, reading one line at a time into the line buffer
-	status = gfx_BitmapAsyncFull((GFX_COLS / 2) - 100, 100, logo_bmp, ui_asset_reader, logo_bmpstate, 0, 0);
+	status = gfx_BitmapAsyncFull((GFX_COLS / 2) - 100, 100, logo_bmp, ui_asset_reader, logo_bmpstate, 1, 0);
 	
 	// Destroy any resources
 	fclose(ui_asset_reader);
@@ -1038,14 +1037,14 @@ int ui_UpdateInfoPane(state_t *state, gamedata_t *gamedata, launchdat_t *launchd
 	// Clear text on load
 	// snprintf instead of sprintf to limit string sizes
 	
-	int			status;
+	int		status;
 	char		status_msg[64];		// Message buffer for anything needing to be printed onscreen
 	char		info_name[64];
 	char		info_year[8];
 	char		info_company[32];
 	char		info_path[64];
-	char		info_genre[16];
-	char		info_series[32];
+	char		info_genre[24];
+	char		info_series[24];
 	
 	gamedata_t	*gamedata_head;	// Pointer to the start of the gamedata list, so we can restore it
 	gamedata_t	*selected_game;	// Gamedata object for the currently selected line
@@ -1144,7 +1143,7 @@ int ui_UpdateInfoPane(state_t *state, gamedata_t *gamedata, launchdat_t *launchd
 				}
 				
 				if (launchdat->realname != NULL){
-					sprintf(info_name, " %s", launchdat->realname);
+					sprintf(info_name, " %.64s", launchdat->realname);
 				} else {
 					sprintf(info_name, " %s", state->selected_game->name);
 				}
@@ -1153,7 +1152,7 @@ int ui_UpdateInfoPane(state_t *state, gamedata_t *gamedata, launchdat_t *launchd
 				}
 				
 				if (launchdat->genre != NULL){
-					sprintf(info_genre, "%s", launchdat->genre);
+					sprintf(info_genre, "%.24s", launchdat->genre);
 				} else {
 					sprintf(info_genre, "N/A");
 				}
@@ -1162,7 +1161,7 @@ int ui_UpdateInfoPane(state_t *state, gamedata_t *gamedata, launchdat_t *launchd
 				}
 				
 				if (launchdat->series != NULL){
-					sprintf(info_series, "%s", launchdat->series);
+					sprintf(info_series, "%.24s", launchdat->series);
 				} else {
 					sprintf(info_series, "N/A");
 				}

@@ -499,6 +499,7 @@ int gfx_BitmapAsync(int x, int y, bmpdata_t *bmpdata, FILE *bmpfile, bmpstate_t 
 	}	
 	
 	// Read a row of pixels
+	
 	status = fread(bmpstate->pixels, 1, bmpdata->row_unpadded, bmpfile);
 	if (status < 1){
 		free(bmpstate->pixels);
@@ -506,19 +507,28 @@ int gfx_BitmapAsync(int x, int y, bmpdata_t *bmpdata, FILE *bmpfile, bmpstate_t 
 		bmpstate->rows_remaining = 0;
 		return BMP_ERR_READ;	
 	}
+	
 	if (status != bmpdata->row_unpadded){
 		// Seek the number of bytes left in this row
-		status = fseek(bmpfile, (bmpdata->row_padded - status), SEEK_CUR);
+		status = fseek(bmpfile, (bmpdata->row_padded - bmpdata->row_unpadded), SEEK_CUR);
 		if (status != 0){
+			if (BMP_VERBOSE){
+				printf("%s.%d\t gfx_BitmapAsync() Error seeking next row of pixels\n", __FILE__, __LINE__);
+			}
 			free(bmpstate->pixels);
 			bmpstate->width_bytes = 0;
 			bmpstate->rows_remaining = 0;
 			return BMP_ERR_READ;
 		}
+	} else {
+		// Seek to end of row
+		if (bmpdata->row_padded != bmpdata->row_unpadded){
+			fseek(bmpfile, (bmpdata->row_padded - bmpdata->row_unpadded), SEEK_CUR);
+		}
 	}
 	
 	// Get coordinates
-	new_y = y + bmpstate->rows_remaining - 1;
+	new_y = y + bmpstate->rows_remaining;
 	start_addr = gfx_GetXYaddr(x, new_y);
 	
 	// Set starting pixel address
@@ -560,6 +570,11 @@ int gfx_BitmapAsyncFull(int x, int y, bmpdata_t *bmpdata, FILE *bmpfile, bmpstat
 	} else {
 		if (GFX_VERBOSE){
 			printf("%s.%d\t gfx_BitmapAsyncFull() Bitmap header and palette loaded\n", __FILE__, __LINE__);
+			printf("%s.%d\t gfx_BitmapAsyncFull() %dx%d\n", __FILE__, __LINE__, bmpdata->width, bmpdata->height);
+			if (bmpdata->row_unpadded != bmpdata->row_padded){
+				printf("%s.%d\t gfx_BitmapAsyncFull() %d / %d row size\n", __FILE__, __LINE__, bmpdata->row_unpadded, bmpdata->row_padded);
+				printf("%s.%d\t gfx_BitmapAsyncFull() Need to seek at the end of each row!\n", __FILE__, __LINE__);
+			}
 		}
 		
 		// Read palette data
