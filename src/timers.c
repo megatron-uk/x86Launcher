@@ -18,9 +18,30 @@
 #include <stdio.h>
 #include <time.h>
 
+#include "timers.h"
+
 void timers_Print(clock_t start, clock_t end, char* name, int enabled){
 	
 	if (enabled){
 		printf("%s.%d\t %-30s: %5d ticks\n", __FILE__, __LINE__, name, (end - start));
 	}
 }
+
+int timers_FireArt(clock_t last){
+	// Returns true if the timeout since the last input has
+	// exceeded that to fire the artwork display routine
+	
+	int t;
+	
+	t = clock() - last;
+	
+	
+	
+	if (t > ARTWORK_FIRE){
+		printf("%d - Firing\n", t);
+		return 1;
+	} else {
+		return 0;	
+	}
+}
+

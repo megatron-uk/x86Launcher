@@ -291,7 +291,7 @@ void configDefaults(config_t *config){
 int getLaunchdata(gamedata_t *gamedata, launchdat_t *launchdat){
 	/* load and return a launch.dat from from disk, for a given gamedata object */
 	
-	char filepath[65];
+	char filepath[MAX_PATH_SIZE];
 	
 	if (gamedata->has_dat != 1){
 		return -1;
@@ -313,6 +313,18 @@ int getLaunchdata(gamedata_t *gamedata, launchdat_t *launchdat){
 		}
 		return 0;
 	}
+}
+
+int getSounddat(gamedata_t *gamedata, sounddat_t *sounddat){
+	/* load and return the audio devices available for a given game, based on the data
+	stored in the launch.dat metadatafile. */
+	
+}
+
+int getVideodat(gamedata_t *gamedata, videodat_t *videodat){
+	/* load and return the video devices available for a given game, based on the data
+	stored in the launch.dat metadatafile. */
+	
 }
 
 static int configHandler(void* user, const char* section, const char* name, const char* value){

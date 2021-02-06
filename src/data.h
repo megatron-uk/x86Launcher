@@ -31,16 +31,20 @@
 #define MAX_STRING_SIZE		32
 #define MAX_SEARCHDIRS_SIZE	1024
 #define DATA_VERBOSE			0
+#define MAX_PATH_SIZE		65
 
+// A linked list of the games which we have scraped
 typedef struct gamedata {
-	int gameid;				// Unique ID for this game - assigned at scan time
-	char drive;				// Drive letter
-	char path[65];			// Full drive and path name; e.g. A:\Games\FinalFight
-	char name[MAX_STRING_SIZE];			// Just the directory name; e.g. FinalFight
-	int has_dat;				// Flag to indicate __launch.dat was found in the game directory
-	struct gamedata *next;	// Pointer to next gamedata entry
+	int gameid;					// Unique ID for this game - assigned at scan time
+	char drive;					// Drive letter
+	char path[MAX_PATH_SIZE];	// Full drive and path name; e.g. A:\Games\FinalFight
+	char name[MAX_STRING_SIZE];	// Just the directory name; e.g. FinalFight
+	int has_dat;					// Flag to indicate __launch.dat was found in the game directory
+	struct gamedata *next;		// Pointer to next gamedata entry
 } gamedata_t;
 
+// A launchdat object is loaded for the parsed launch.dat file included with a game.
+// Only the currently selected game has this object loaded.
 typedef struct launchdat {
 	char realname[MAX_STRING_SIZE];		// A 'friendly' name to display the game as, instead of just the directory name
 	char genre[MAX_STRING_SIZE];			// A string to represent the genre, in case we want to filter by genre
@@ -55,25 +59,52 @@ typedef struct launchdat {
 	char images[IMAGE_BUFFER_SIZE];		// String containing all the image filenames
 } launchdat_t;
 
+// A sounddat object is loaded for the parsed launch.dat file included with a game.
+// Only the currently selected game has this object loaded.
+typedef struct sounddat {
+	unsigned char beeper;				// Game supports PC speaker
+	unsigned char tandy;					// Tandy 3-voice
+	unsigned char adlib;					// Adlib FM or compatibles
+	unsigned char soundblaster;			// Soundblaster, or equivalent FM + Digital effects
+	unsigned char mt32;					// MT-32, LAPC or other LA-synthesis modules
+	unsigned char gm;					// General MIDI
+	unsigned char covox;					// Covox Speech Thing
+	unsigned char disney;				// Disney Sound Source
+} sounddat_t;
+
+// A videodat object is loaded for the parsed launch.dat file included with a game.
+// Only the currently selected game has this object loaded.
+typedef struct videodat {
+	unsigned char text;					// Game supports text mode
+	unsigned char hercules;				// Hi-resolution Hercules text mode
+	unsigned char cga;					// CGA 4 colour graphics
+	unsigned char ega;					// EGA 16 colour graphics
+	unsigned char vga;					// VGA 256 colour graphics at up to 320x240, or 16 colour at 640x480
+	unsigned char svga;					// VGA 256 colour graphics at 640x400 and upwards
+} videodat_t;
+
+// A list of artwork, parsed from the launchdat file included with a game.
 typedef struct imagefile {
 	char filename[MAX_FILENAME_SIZE];	// Filename of an image
 	struct imagefile *prev;				// Pointer to the previous image file for this game
 	struct imagefile *next;				// Pointer to the next image file for this game
 } imagefile_t;
 
+// A list of game directories to search and scrape at run time.
 typedef struct gamedir {
-	char path[65];						// Path to search for games
+	char path[MAX_PATH_SIZE];			// Path to search for games
 	struct gamedir *next;				// Link to the next search path
 } gamedir_t;
 
+// Holds the configuration of our application from launcher.ini
 typedef struct config {
-	int timers;				// Whether to time function calls
-	int verbose;				// Verbose/debug flag
-	int save;					// Save the list of all games to a text file
-	int preload_names;		// Flag to indicate wheter a launch.dat is loaded at scrape-time to pick up real names
+	int timers;						// Whether to time function calls
+	int verbose;						// Verbose/debug flag
+	int save;						// Save the list of all games to a text file
+	int preload_names;				// Flag to indicate wheter a launch.dat is loaded at scrape-time to pick up real names
 	int keyboard_test;
-	char dirs[MAX_SEARCHDIRS_SIZE];			// String containing all game dirs to search - it will then be parsed into a list below:
-	struct gamedir *dir;		// List of all the game search dirs
+	char dirs[MAX_SEARCHDIRS_SIZE];	// String containing all game dirs to search - it will then be parsed into a list below:
+	struct gamedir *dir;				// List of all the game search dirs
 } config_t;
 
 // Function prototypes
