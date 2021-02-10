@@ -126,7 +126,6 @@ int main() {
 	
 	// Screenshot state line buffer
 	screenshot_bmp_state = (bmpstate_t *) malloc(sizeof(bmpstate_t));
-	screenshot_bmp_state->pixels = NULL;
 	
 	// List of artwork for a game
 	imagefile = (imagefile_t *) malloc(sizeof(imagefile_t));

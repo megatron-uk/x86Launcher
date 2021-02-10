@@ -84,7 +84,8 @@ typedef struct bmpdata {
 typedef struct bmpstate {
 	unsigned int	width_bytes;
 	unsigned int	rows_remaining;	// Total number of rows left to be read
-	unsigned char __huge	*pixels;			// Needs to be malloc'ed to the width of a single row of pixels
+	//unsigned char __huge	*pixels;			// Needs to be malloc'ed to the width of a single row of pixels
+	unsigned char pixels[640];	// Total number of pixels in the width of any bitmap
 } bmpstate_t;
 
 // ============================

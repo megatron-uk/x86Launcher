@@ -481,16 +481,16 @@ int gfx_BitmapAsync(int x, int y, bmpdata_t *bmpdata, FILE *bmpfile, bmpstate_t 
 	if (bmpstate->rows_remaining == bmpdata->height){
 		// This is a new image, or we haven't read a row yet
 		
-		if (bmpstate->pixels != NULL){
-			free(bmpstate->pixels);
-		}
-		bmpstate->pixels = (uint8_t*) calloc(bmpdata->width, bmpdata->bytespp);
+		//if (bmpstate->pixels != NULL){
+		//	free(bmpstate->pixels);
+		//}
+		//bmpstate->pixels = (uint8_t*) calloc(bmpdata->width, bmpdata->bytespp);
 		bmpstate->width_bytes = bmpdata->width * bmpdata->bytespp;
 		
 		// Seek to start of data section in file
 		status = fseek(bmpfile, bmpdata->offset, SEEK_SET);
 		if (status != 0){
-			free(bmpstate->pixels);
+			//free(bmpstate->pixels);
 			bmpstate->width_bytes = 0;
 			bmpstate->rows_remaining = 0;
 			return BMP_ERR_READ;
@@ -501,7 +501,7 @@ int gfx_BitmapAsync(int x, int y, bmpdata_t *bmpdata, FILE *bmpfile, bmpstate_t 
 	
 	status = fread(bmpstate->pixels, 1, bmpdata->row_unpadded, bmpfile);
 	if (status < 1){
-		free(bmpstate->pixels);
+		//free(bmpstate->pixels);
 		bmpstate->width_bytes = 0;
 		bmpstate->rows_remaining = 0;
 		return BMP_ERR_READ;	
@@ -514,7 +514,7 @@ int gfx_BitmapAsync(int x, int y, bmpdata_t *bmpdata, FILE *bmpfile, bmpstate_t 
 			if (BMP_VERBOSE){
 				printf("%s.%d\t gfx_BitmapAsync() Error seeking next row of pixels\n", __FILE__, __LINE__);
 			}
-			free(bmpstate->pixels);
+			//free(bmpstate->pixels);
 			bmpstate->width_bytes = 0;
 			bmpstate->rows_remaining = 0;
 			return BMP_ERR_READ;
