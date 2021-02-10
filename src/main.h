@@ -22,10 +22,14 @@
 #define FILTER_NONE		0
 #define FILTER_GENRE		1
 #define FILTER_SERIES	2
+#define FILTER_COMPANY	3
+#define FILTER_TECH		4
+#define FILTER_MAX		4
 #define START_MAIN		0
 #define START_ALT		1
 
-#define MAXIMUM_FILTER_STRINGS 32
+#define MAXIMUM_FILTER_STRINGS 200
+#define MAXIMUM_SELECTED_STRINGS 30
 
 typedef struct state {
 	unsigned int selected_list[SELECTION_LIST_SIZE];		// A list of game ID's which are currently selected
@@ -33,20 +37,23 @@ typedef struct state {
 	unsigned int selected_page;			// Page 'N' of the selected list
 	unsigned int selected_line;			// The line in the page indicating the selected game
 	unsigned int total_pages;			// Total number of pages in the selected_list
-	unsigned int active_pane;
+	unsigned int active_pane;			// The pane which currently has focus
 	unsigned int selected_start;			// Which start file to launch, 0==start, 1==alt_start
 	unsigned int selected_filter;		// Which filter to use, 0==none, 1==genre, 2==series
 	unsigned int selected_filter_string;	// Which filter string is selected
 	unsigned int available_filter_strings; // How many filter strings are currently available
+	unsigned int available_filter_pages;	// How many pages of filter strings are available
+	unsigned int current_filter_page;	// Which page of filter strings is currently selected
 	
 	// Info about selected item
 	int selected_gameid;					// Currently selected gameid
 	gamedata_t *selected_game;			// Currently selected gamedata item
-	int has_launchdat;
-	int has_images;
-	char selected_image[65];				// path + filename of artwork
+	int has_launchdat;					// Current game has metadata
+	int has_images;						// Current game has artwork
+	char selected_image[65];				// path + filename of current artwork
 	
 	// Filter list
 	char filter_strings[MAXIMUM_FILTER_STRINGS][MAX_STRING_SIZE];
+	char filter_strings_selected[MAXIMUM_FILTER_STRINGS][MAXIMUM_SELECTED_STRINGS];
 	
 } state_t;

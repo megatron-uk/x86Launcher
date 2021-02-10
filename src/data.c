@@ -53,15 +53,15 @@ gamedata_t * getLastGamedata(gamedata_t *gamedata){
 	return gamedata;
 }
 
+//imagefile_t * getLastImage(imagefile_t *imagefile){
+//	/* Given a imagefile item, find the last entry of the list */
+//	
+//	while (imagefile->next != NULL){
+//		imagefile = imagefile->next;
+//	}
+//	return imagefile;	
+//}
 
-imagefile_t * getLastImage(imagefile_t *imagefile){
-	/* Given a imagefile item, find the last entry of the list */
-	
-	while (imagefile->next != NULL){
-		imagefile = imagefile->next;
-	}
-	return imagefile;	
-}
 
 gamedir_t * getLastGameDir(gamedir_t *gamedir){
 	/* Given a gamedir search path item, find the last entry of the list */
@@ -73,7 +73,7 @@ gamedir_t * getLastGameDir(gamedir_t *gamedir){
 }
 
 int removeGamedata(gamedata_t *gamedata){
-	/* Remove all nodes of a given imagefile list */
+	/* Remove all nodes of a given gamedata list */
 	
 	gamedata_t * current = gamedata;
 	gamedata_t * next = NULL;
@@ -107,44 +107,44 @@ int removeGamedata(gamedata_t *gamedata){
 	return 0;
 }
 
-int removeImagefile(imagefile_t *imagefile){
-	/* Remove all nodes of a given imagefile list */
-	
-	imagefile_t *head = imagefile;
-	imagefile_t *next = NULL;
-	
-	if (imagefile->next == NULL){
-		return 0;
-	}
-	
-	if (DATA_VERBOSE){
-		printf("%s.%d\t removeImagefile() Freeing imagefile list\n", __FILE__, __LINE__);	
-	}
-	if (imagefile->next != NULL){
-		imagefile = imagefile->next;	
-	}
-	while(imagefile != NULL){	
-		if (imagefile->next != NULL){
-			/* There's another element, so free() this one and
-			    then move on to the next */
-			next = imagefile->next;
-			if (DATA_VERBOSE){
-				printf("%s.%d\t removeImagefile() Removing image list node [%s]\n", __FILE__, __LINE__, imagefile->filename);	
-			}
-			free(imagefile);
-			imagefile = next;
-		} else {
-			if (DATA_VERBOSE){
-				printf("%s.%d\t removeImagefile() Removing final image node [%s]\n", __FILE__, __LINE__, imagefile->filename);	
-			}
-			free(imagefile);
-			imagefile = head;
-			return 0;	
-		}
-	}
-	imagefile = head;
-	return 0;
-}
+//int removeImagefile(imagefile_t *imagefile){
+//	/* Remove all nodes of a given imagefile list */
+//	
+//	imagefile_t *head = imagefile;
+//	imagefile_t *next = NULL;
+//	
+//	if (imagefile->next == NULL){
+//		return 0;
+//	}
+//	
+//	if (DATA_VERBOSE){
+//		printf("%s.%d\t removeImagefile() Freeing imagefile list\n", __FILE__, __LINE__);	
+//	}
+//	if (imagefile->next != NULL){
+//		imagefile = imagefile->next;	
+//	}
+//	while(imagefile != NULL){	
+//		if (imagefile->next != NULL){
+//			/* There's another element, so free() this one and
+//			    then move on to the next */
+//			next = imagefile->next;
+//			if (DATA_VERBOSE){
+//				printf("%s.%d\t removeImagefile() Removing image list node [%s]\n", __FILE__, __LINE__, imagefile->filename);	
+//			}
+//			free(imagefile);
+//			imagefile = next;
+//		} else {
+//			if (DATA_VERBOSE){
+//				printf("%s.%d\t removeImagefile() Removing final image node [%s]\n", __FILE__, __LINE__, imagefile->filename);	
+//			}
+//			free(imagefile);
+//			imagefile = head;
+//			return 0;	
+//		}
+//	}
+//	imagefile = head;
+//	return 0;
+//}
 
 int sortGamedata(gamedata_t *gamedata, int verbose){
 	// Sort the list of game data objects by name
@@ -404,8 +404,22 @@ int getImageList(launchdat_t *launchdat, imagefile_t *imagefile){
 	
 	char *p;
 	char buffer[IMAGE_BUFFER_SIZE];
-	int found;	// Counter for number of found images
+	unsigned char found;	// Counter for number of found images
 	found = 0;
+	
+	if (DATA_VERBOSE){
+		printf("%s.%d\t getImageList() Extracting image filenames for %s\n", __FILE__, __LINE__, launchdat->realname);
+		printf("%s.%d\t getImageList() Images=%s\n", __FILE__, __LINE__, launchdat->images);
+	}
+	
+	// Reset the imagefile list array
+	for(found =0; found < MAX_IMAGES; found++){
+		memset(imagefile->filename[found], '\0', MAX_STRING_SIZE);
+	}
+	found = 0;
+	imagefile->selected = -1;
+	imagefile->first = -1;
+	imagefile->last = -1;
 	
 	if (launchdat->images != NULL){
 		strncpy(buffer, launchdat->images, IMAGE_BUFFER_SIZE);
@@ -414,19 +428,29 @@ int getImageList(launchdat_t *launchdat, imagefile_t *imagefile){
 			if (DATA_VERBOSE){
 				printf("%s.%d\t getImageList() Extracted image filename [%s], %d len\n", __FILE__, __LINE__, p, strlen(p));
 			}
-			found++;
+			strncpy(imagefile->filename[found], p,  MAX_FILENAME_SIZE);
+			
+			/*
 			imagefile = getLastImage(imagefile);
 			imagefile->next = (imagefile_t *) malloc(sizeof(imagefile_t));
 			memset(imagefile->next->filename, '\0', strlen(imagefile->next->filename));
 			strncpy(imagefile->next->filename, p, MAX_FILENAME_SIZE);
 			imagefile->next->prev = imagefile;
 			imagefile->next->next = NULL;
+			*/
 			if (found >= MAX_IMAGES){
 				if (DATA_VERBOSE){
 					printf("%s.%d\t getImageList() Hit limit of %d image filenames\n", __FILE__, __LINE__, MAX_IMAGES);
 				}
+				imagefile->selected = 0;
+				imagefile->first = 0;
+				imagefile->last = found;
 				return found;
 			}
+			imagefile->selected = 0;
+			imagefile->first = 0;
+			imagefile->last = found;
+			found++;
 			p = strtok(NULL, ",; ");
 		}
 		if (DATA_VERBOSE){

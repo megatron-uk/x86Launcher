@@ -86,6 +86,9 @@ void ui_Init(){
 
 void ui_Close(){
 	if (ui_assets_status == UI_ASSETS_LOADED){
+		if (UI_VERBOSE){
+			printf("%s.%d\t ui_Close() Freeing bitmap assets memory\n", __FILE__, __LINE__);
+		}
 		bmp_Destroy(ui_checkbox_bmp);
 		bmp_Destroy(ui_checkbox_empty_bmp);
 		bmp_Destroy(ui_main_bmp);
@@ -97,6 +100,29 @@ void ui_Close(){
 		bmp_Destroy(ui_series_bmp);
 		bmp_Destroy(ui_path_bmp);
 		bmp_Destroy(ui_select_bmp);
+	}
+	
+	// Free main background
+	if (UI_VERBOSE){
+		printf("%s.%d\t ui_Close() Freeing main background memory\n", __FILE__, __LINE__);
+	}
+	free(ui_main_bmpstate);
+	
+	// Free font
+	if (UI_VERBOSE){
+			printf("%s.%d\t ui_Close() Freeing font assets memory\n", __FILE__, __LINE__);
+		}
+	bmp_DestroyFont(ui_font);
+	
+	// Close file handles
+	if (UI_VERBOSE){
+		printf("%s.%d\t ui_Close() Closing file handles\n", __FILE__, __LINE__);
+	}
+	fclose(ui_asset_reader);
+	fclose(ui_mainstate_reader);
+	
+	if (UI_VERBOSE){
+		printf("%s.%d\t ui_Close() UI fully deinitialised\n", __FILE__, __LINE__);
 	}
 }
 
@@ -119,10 +145,10 @@ int ui_DisplayArtwork(FILE *screenshot_file, bmpdata_t *screenshot_bmp, bmpstate
 	gfx_BoxFill(ui_artwork_xpos, ui_artwork_ypos, ui_artwork_xpos + ui_artwork_width, ui_artwork_ypos + ui_artwork_height, PALETTE_UI_BLACK);
 	
 	// Construct full path of image
-	sprintf(msg, "%s\\%s", state->selected_game->path, imagefile->next->filename);
+	sprintf(msg, "%s\\%s", state->selected_game->path, imagefile->filename[imagefile->selected]);
 	strcpy(state->selected_image, msg);
 	if (UI_VERBOSE){
-		printf("%s.%d\t ui_DisplayArtwork() Selected artwork filename [%s]\n", __FILE__, __LINE__, imagefile->next->filename);
+		printf("%s.%d\t ui_DisplayArtwork() Selected artwork [%d] filename [%s]\n", __FILE__, __LINE__, imagefile->selected, imagefile->filename[imagefile->selected]);
 	}
 	
 	// =======================
@@ -154,7 +180,7 @@ int ui_DisplayArtwork(FILE *screenshot_file, bmpdata_t *screenshot_bmp, bmpstate
 		}
 	}
 	if (UI_VERBOSE){
-		printf("%s.%d\t ui_DisplayArtwork() Call to display %s complete\n", __FILE__, __LINE__, imagefile->next->filename);	
+		printf("%s.%d\t ui_DisplayArtwork() Call to display %s complete\n", __FILE__, __LINE__, imagefile->filename[imagefile->selected]);	
 	}
 	if (screenshot_file != NULL){
 		fclose(screenshot_file);
@@ -191,10 +217,10 @@ int ui_DrawFilterPrePopup(state_t *state, int toggle){
 	//gfx_BoxFillTranslucent(ui_launch_popup_xpos + 10, ui_launch_popup_ypos + 10, ui_launch_popup_xpos + 10 + ui_launch_popup_width, ui_launch_popup_ypos + 10 + ui_launch_popup_height + 30, PALETTE_UI_DGREY);
 	
 	// Draw main box
-	gfx_BoxFill(ui_launch_popup_xpos, ui_launch_popup_ypos, ui_launch_popup_xpos + ui_launch_popup_width, ui_launch_popup_ypos + ui_launch_popup_height + 30, PALETTE_UI_BLACK);
+	gfx_BoxFill(ui_launch_popup_xpos, ui_launch_popup_ypos, ui_launch_popup_xpos + ui_launch_popup_width, ui_launch_popup_ypos + ui_launch_popup_height + 90, PALETTE_UI_BLACK);
 	
 	// Draw main box outline
-	gfx_Box(ui_launch_popup_xpos, ui_launch_popup_ypos, ui_launch_popup_xpos + ui_launch_popup_width, ui_launch_popup_ypos + ui_launch_popup_height + 30, PALETTE_UI_LGREY);
+	gfx_Box(ui_launch_popup_xpos, ui_launch_popup_ypos, ui_launch_popup_xpos + ui_launch_popup_width, ui_launch_popup_ypos + ui_launch_popup_height + 90, PALETTE_UI_LGREY);
 	
 	// Box title
 	gfx_Puts(ui_launch_popup_xpos + 90, ui_launch_popup_ypos + 10, ui_font, "Enable Filter?");
@@ -204,6 +230,10 @@ int ui_DrawFilterPrePopup(state_t *state, int toggle){
 	gfx_Puts(ui_launch_popup_xpos + 35, ui_launch_popup_ypos + 65, ui_font, "By Genre");
 	// Series filter text
 	gfx_Puts(ui_launch_popup_xpos + 35, ui_launch_popup_ypos + 95, ui_font, "By Series");
+	// Copmany filter text
+	gfx_Puts(ui_launch_popup_xpos + 35, ui_launch_popup_ypos + 125, ui_font, "By Company");
+	// Tech specs filter text
+	gfx_Puts(ui_launch_popup_xpos + 35, ui_launch_popup_ypos + 155, ui_font, "By Technical Specs");
 	
 	// Toggle which entry is selected
 	if (toggle == 1){
@@ -214,8 +244,8 @@ int ui_DrawFilterPrePopup(state_t *state, int toggle){
 	}
 	
 	// Detect wraparound
-	if (state->selected_filter >= FILTER_SERIES){
-		state->selected_filter = FILTER_SERIES;
+	if (state->selected_filter >= FILTER_MAX){
+		state->selected_filter = FILTER_MAX;
 	}
 	if (state->selected_filter < 1){
 		state->selected_filter = FILTER_NONE;
@@ -226,20 +256,47 @@ int ui_DrawFilterPrePopup(state_t *state, int toggle){
 		gfx_Bitmap(ui_launch_popup_xpos + 10, ui_launch_popup_ypos + 35, ui_checkbox_bmp);
 		gfx_Bitmap(ui_launch_popup_xpos + 10, ui_launch_popup_ypos + 65, ui_checkbox_empty_bmp);
 		gfx_Bitmap(ui_launch_popup_xpos + 10, ui_launch_popup_ypos + 95, ui_checkbox_empty_bmp);
+		gfx_Bitmap(ui_launch_popup_xpos + 10, ui_launch_popup_ypos + 125, ui_checkbox_empty_bmp);
+		gfx_Bitmap(ui_launch_popup_xpos + 10, ui_launch_popup_ypos + 155, ui_checkbox_empty_bmp);
 	}
 	if (state->selected_filter == FILTER_GENRE){
 		// genre
 		gfx_Bitmap(ui_launch_popup_xpos + 10, ui_launch_popup_ypos + 35, ui_checkbox_empty_bmp);
 		gfx_Bitmap(ui_launch_popup_xpos + 10, ui_launch_popup_ypos + 65, ui_checkbox_bmp);
 		gfx_Bitmap(ui_launch_popup_xpos + 10, ui_launch_popup_ypos + 95, ui_checkbox_empty_bmp);
+		gfx_Bitmap(ui_launch_popup_xpos + 10, ui_launch_popup_ypos + 125, ui_checkbox_empty_bmp);
+		gfx_Bitmap(ui_launch_popup_xpos + 10, ui_launch_popup_ypos + 155, ui_checkbox_empty_bmp);
 	}
 	if (state->selected_filter == FILTER_SERIES){
 		// series
 		gfx_Bitmap(ui_launch_popup_xpos + 10, ui_launch_popup_ypos + 35, ui_checkbox_empty_bmp);
 		gfx_Bitmap(ui_launch_popup_xpos + 10, ui_launch_popup_ypos + 65, ui_checkbox_empty_bmp);
 		gfx_Bitmap(ui_launch_popup_xpos + 10, ui_launch_popup_ypos + 95, ui_checkbox_bmp);
+		gfx_Bitmap(ui_launch_popup_xpos + 10, ui_launch_popup_ypos + 125, ui_checkbox_empty_bmp);
+		gfx_Bitmap(ui_launch_popup_xpos + 10, ui_launch_popup_ypos + 155, ui_checkbox_empty_bmp);
+	}
+	if (state->selected_filter == FILTER_COMPANY){
+		// developer/company/publisher
+		gfx_Bitmap(ui_launch_popup_xpos + 10, ui_launch_popup_ypos + 35, ui_checkbox_empty_bmp);
+		gfx_Bitmap(ui_launch_popup_xpos + 10, ui_launch_popup_ypos + 65, ui_checkbox_empty_bmp);
+		gfx_Bitmap(ui_launch_popup_xpos + 10, ui_launch_popup_ypos + 95, ui_checkbox_empty_bmp);
+		gfx_Bitmap(ui_launch_popup_xpos + 10, ui_launch_popup_ypos + 125, ui_checkbox_bmp);
+		gfx_Bitmap(ui_launch_popup_xpos + 10, ui_launch_popup_ypos + 155, ui_checkbox_empty_bmp);
+	}
+	if (state->selected_filter == FILTER_TECH){
+		// developer/company/publisher
+		gfx_Bitmap(ui_launch_popup_xpos + 10, ui_launch_popup_ypos + 35, ui_checkbox_empty_bmp);
+		gfx_Bitmap(ui_launch_popup_xpos + 10, ui_launch_popup_ypos + 65, ui_checkbox_empty_bmp);
+		gfx_Bitmap(ui_launch_popup_xpos + 10, ui_launch_popup_ypos + 95, ui_checkbox_empty_bmp);
+		gfx_Bitmap(ui_launch_popup_xpos + 10, ui_launch_popup_ypos + 125, ui_checkbox_empty_bmp);
+		gfx_Bitmap(ui_launch_popup_xpos + 10, ui_launch_popup_ypos + 155, ui_checkbox_bmp);
 	}
 	
+	return UI_OK;
+}
+
+int ui_DrawMultiChoiceFilterPopup(state_t *state, int toggle){
+
 	return UI_OK;
 }
 
@@ -258,61 +315,71 @@ int ui_DrawFilterPopup(state_t *state, int toggle){
 	// Draw main box outline
 	gfx_Box(30, 40, GFX_COLS - 40, GFX_ROWS - 40, PALETTE_UI_LGREY);
 	
-	// Box title
-	if (state->selected_filter == FILTER_GENRE){
-		gfx_Puts(240, 45, ui_font, "Select Genre");
-	}
-	if (state->selected_filter == FILTER_SERIES){
-		gfx_Puts(240, 45, ui_font, "Select Series");
-	}
+	if (state->selected_filter == FILTER_TECH){
+		// Do a more fancy multi-choice selection
+		gfx_Puts(180, 45, ui_font, "Select Technical Specifications");
+		ui_DrawMultiChoiceFilterPopup(state, toggle);
+	} else {
 	
-	if (toggle == -1){
-		state->selected_filter_string--;
-	}
-	if (toggle == 1){
-		state->selected_filter_string++;
-	}
-	
-	if (state->selected_filter_string < 1){
-		state->selected_filter_string = FILTER_NONE;
-	}
-	if (state->selected_filter_string > state->available_filter_strings){
-		state->selected_filter_string = state->available_filter_strings;
-	}
-	
-	for(i=0; i<MAXIMUM_FILTER_STRINGS; i++){
+		// Box title
+		if (state->selected_filter == FILTER_GENRE){
+			gfx_Puts(240, 45, ui_font, "Select Genre");
+		}
+		if (state->selected_filter == FILTER_SERIES){
+			gfx_Puts(240, 45, ui_font, "Select Series");
+		}
+		if (state->selected_filter == FILTER_COMPANY){
+			gfx_Puts(240, 45, ui_font, "Select Company");
+		}
 		
-		if ((state->filter_strings[i] != NULL) && (strcmp(state->filter_strings[i], "") != 0)){
+		if (toggle == -1){
+			state->selected_filter_string--;
+		}
+		if (toggle == 1){
+			state->selected_filter_string++;
+		}
 		
-			// Column 1
-			if (i < 11){
-				if (i == state->selected_filter_string){
-					gfx_Bitmap(45, 70 + (i * 25), ui_checkbox_bmp);
-				} else {
-					gfx_Bitmap(45, 70 + (i * 25), ui_checkbox_empty_bmp);
-				}
-				gfx_Puts(70, 70 + (i * 25), ui_font, state->filter_strings[i]);
-			}
+		if (state->selected_filter_string < 1){
+			state->selected_filter_string = FILTER_NONE;
+		}
+		if (state->selected_filter_string > state->available_filter_strings){
+			state->selected_filter_string = state->available_filter_strings;
+		}
+		
+		for(i=0; i<MAXIMUM_FILTER_STRINGS; i++){
 			
-			// Column 2
-			if ((i >= 11) && (i < 22)){
-				if (i == state->selected_filter_string){
-					gfx_Bitmap(230, 70 + ((i - 11) * 25), ui_checkbox_bmp);
-				} else {
-					gfx_Bitmap(230, 70 + ((i - 11) * 25), ui_checkbox_empty_bmp);
-				}
-				gfx_Puts(255, 70 + ((i - 11) * 25), ui_font, state->filter_strings[i]);
-			}
+			if ((state->filter_strings[i] != NULL) && (strcmp(state->filter_strings[i], "") != 0)){
 			
-			// Column 3
-			if (i >= 22){
-				if (i == state->selected_filter_string){
-					gfx_Bitmap(420, 70 + ((i - 22) * 25), ui_checkbox_bmp);
-				} else {
-					gfx_Bitmap(420, 70 + ((i - 22) * 25), ui_checkbox_empty_bmp);
+				// Column 1
+				if (i < 11){
+					if (i == state->selected_filter_string){
+						gfx_Bitmap(45, 70 + (i * 25), ui_checkbox_bmp);
+					} else {
+						gfx_Bitmap(45, 70 + (i * 25), ui_checkbox_empty_bmp);
+					}
+					gfx_Puts(70, 70 + (i * 25), ui_font, state->filter_strings[i]);
 				}
-				gfx_Puts(445, 70 + ((i - 22) * 25), ui_font, state->filter_strings[i]);
-			}	
+				
+				// Column 2
+				if ((i >= 11) && (i < 22)){
+					if (i == state->selected_filter_string){
+						gfx_Bitmap(230, 70 + ((i - 11) * 25), ui_checkbox_bmp);
+					} else {
+						gfx_Bitmap(230, 70 + ((i - 11) * 25), ui_checkbox_empty_bmp);
+					}
+					gfx_Puts(255, 70 + ((i - 11) * 25), ui_font, state->filter_strings[i]);
+				}
+				
+				// Column 3
+				if (i >= 22){
+					if (i == state->selected_filter_string){
+						gfx_Bitmap(420, 70 + ((i - 22) * 25), ui_checkbox_bmp);
+					} else {
+						gfx_Bitmap(420, 70 + ((i - 22) * 25), ui_checkbox_empty_bmp);
+					}
+					gfx_Puts(445, 70 + ((i - 22) * 25), ui_font, state->filter_strings[i]);
+				}	
+			}
 		}
 	}
 	
@@ -957,7 +1024,7 @@ int ui_UpdateBrowserPane(state_t *state, gamedata_t *gamedata){
 	int			y;				// Vertical position offset for each row
 	int 			i;				// Loop counter
 	int 			gameid;			// ID of each game in selected_list
-	char		msg[64];		// Message buffer for each row
+	char			msg[64];		// Message buffer for each row
 	int			startpos;			// Index of first displayable element of state->selected_items
 	int			endpos;			// Index to last displayable element of state->selected_items
 	
@@ -974,11 +1041,6 @@ int ui_UpdateBrowserPane(state_t *state, gamedata_t *gamedata){
 	} else {
 		endpos = startpos + ui_browser_max_lines;
 	}
-	
-	// Clear all lines
-	//gfx_Bitmap(ui_browser_panel_x_pos, ui_browser_panel_y_pos, ui_list_bmp);
-	
-	//gfx_BitmapAsyncFull(ui_browser_panel_x_pos, ui_browser_panel_y_pos, ui_list_bmp, ui_liststate_reader, ui_list_bmpstate, 1, 1);
 	
 	// Simple black fill
 	gfx_BoxFill(ui_browser_panel_x_pos + 3, ui_browser_panel_y_pos + 3, ui_browser_panel_x_pos + ui_list_bmp->width - 3, ui_browser_panel_y_pos + ui_list_bmp->height - 3, PALETTE_UI_BLACK);
@@ -1046,12 +1108,12 @@ int ui_UpdateInfoPane(state_t *state, gamedata_t *gamedata, launchdat_t *launchd
 	char		info_genre[24];
 	char		info_series[24];
 	
-	gamedata_t	*gamedata_head;	// Pointer to the start of the gamedata list, so we can restore it
-	gamedata_t	*selected_game;	// Gamedata object for the currently selected line
+	//gamedata_t	*gamedata_head;	// Pointer to the start of the gamedata list, so we can restore it
+	//gamedata_t	*selected_game;	// Gamedata object for the currently selected line
 	//launchdat_t	*launchdat;		// Metadata object representing the launch.dat file for this game
 	
 	// Store gamedata head
-	gamedata_head = gamedata;
+	//gamedata_head = gamedata;
 	
 	// Clear all existing text
 	// title
@@ -1225,7 +1287,7 @@ int ui_UpdateInfoPane(state_t *state, gamedata_t *gamedata, launchdat_t *launchd
 		gfx_Bitmap(ui_checkbox_has_midi_serial_xpos, ui_checkbox_has_midi_serial_ypos, ui_checkbox_empty_bmp);
 		sprintf(status_msg, "ERROR, unable to find gamedata object for ID %d", state->selected_gameid);
 		gfx_Puts(ui_info_name_text_xpos, ui_info_name_text_ypos, ui_font, status_msg);
-		gamedata = gamedata_head;
+		//gamedata = gamedata_head;
 		return UI_OK;
 	}
 	
@@ -1238,6 +1300,6 @@ int ui_UpdateInfoPane(state_t *state, gamedata_t *gamedata, launchdat_t *launchd
 	gfx_Puts(ui_info_genre_text_xpos, ui_info_genre_text_ypos, ui_font, info_genre);
 	gfx_Puts(ui_info_series_text_xpos, ui_info_series_text_ypos, ui_font, info_series);
 	gfx_Puts(ui_info_path_text_xpos, ui_info_path_text_ypos, ui_font, info_path);
-	gamedata = gamedata_head;
+	//gamedata = gamedata_head;
 	return UI_OK;
 }

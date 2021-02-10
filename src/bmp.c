@@ -495,6 +495,15 @@ void bmp_Destroy(bmpdata_t *bmpdata){
 	free(bmpdata);	
 }
 
+void bmp_DestroyState(bmpstate_t *bmpstate){
+	// Destroy a bmpstate structure and free any memory allocated
+	
+	if (bmpstate->pixels != NULL){
+		free(bmpstate->pixels);	
+	}
+	free(bmpstate);	
+}
+
 void bmp_DestroyFont(fontdata_t *fontdata){
 	// Destroy a fontdata structure and free any memory allocated
 	

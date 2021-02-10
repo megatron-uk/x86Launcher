@@ -31,7 +31,7 @@ int timers_FireArt(clock_t last){
 	// Returns true if the timeout since the last input has
 	// exceeded that to fire the artwork display routine
 	
-	int t;
+	long long int t;
 	
 	t = clock() - last;
 	

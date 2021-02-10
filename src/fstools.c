@@ -280,9 +280,13 @@ int zeroRunBat(){
 	// Empty contents of the run.bat file
 	FILE *runbat;
 	
+	if (FS_VERBOSE){
+		printf("%s.%d\t Emptying the %s call file\n", __FILE__, __LINE__, RUNBAT);
+	}
 	runbat = fopen(RUNBAT, "w");
-	fclose(runbat);
-	
+	if (runbat != NULL){
+		fclose(runbat);
+	}
 	return 0;
 }
 

@@ -21,6 +21,7 @@
 #endif
 
 #define GFX_VERBOSE		0			// Turn on/off gfx-specific debug output
+#define GFX_VESA_TEXT	0x03			// Standard DOS text mode
 #define GFX_VESA_DESIRED	0x100		// The default VESA mode we want
 #define GFX_BPP			8			// Colour depth that we want
 #define GFX_BITPLANES	1			// The number of bitplanes we want
@@ -52,7 +53,7 @@ int 			gfx_Box(int x1, int y1, int x2, int y2, unsigned char palette);
 int 			gfx_BoxFill(int x1, int y1, int x2, int y2, unsigned char palette);
 int			gfx_BoxFillTranslucent(int x1, int y1, int x2, int y2, unsigned char palette);
 void			gfx_Clear();
-int			gfx_Close();
+void			gfx_Close();
 void			gfx_Flip();
 long int		gfx_GetXYaddr(unsigned short int x, unsigned short int y);
 int			gfx_Init();

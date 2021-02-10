@@ -194,33 +194,32 @@ int gfx_CheckMode(){
 	return 0;
 }
 
-int gfx_Close(){
+void gfx_Close(){
 	//  Return to text mode
 	
 	if (GFX_VERBOSE){
 		printf("%s.%d\t gfx_Close() Exiting gfx mode\n", __FILE__, __LINE__);	
 	}
-	
 	//  Clear anything we did to the screen
 	gfx_Clear();
+	gfx_Flip();
 	
-	// Text mode on
-	gfx_TextOn();
-	
-	return 0;
+	// Set original video mode
+	if (GFX_VERBOSE){
+		printf("%s.%d\t gfx_Close() Restoring text mode\n", __FILE__, __LINE__);	
+	}
+	vesa_SetMode(GFX_VESA_TEXT);
 }
 
 void gfx_Clear(){
-	
-	long int i;
-	unsigned short int c;
+	// Clear the local vram buffer with a solid colour
 	
 	if (GFX_VERBOSE){
 		printf("%s.%d\t gfx_Clear() Setting %ld pixels\n", __FILE__, __LINE__, sizeof(vram_buffer));	
 	}
 	
 	// Set local vram_buffer to empty
-	memset(vram_buffer, 0, sizeof(vram_buffer));
+	memset(vram_buffer, PALETTE_UI_BLACK, sizeof(vram_buffer));
 	
 }
 
@@ -665,11 +664,14 @@ int gfx_Box(int x1, int y1, int x2, int y2, unsigned char palette){
 	step = (GFX_COLS - x2) + x1;
 	
 	// Draw top
-	for(col = x1; col <= x2; col++){
-		*vram = palette;
-		// Move to next pixel in line
-		vram++;
-	}
+	//for(col = x1; col <= x2; col++){
+	//	*vram = palette;
+	//	// Move to next pixel in line
+	//	vram++;
+	//}
+	memset(vram, palette, x2 - x1);
+	vram += (x2 - x1);
+	
 	// Jump to next line down and start of left side
 	vram += (GFX_COLS - x2) + (x1 - 1);
 	
@@ -682,11 +684,13 @@ int gfx_Box(int x1, int y1, int x2, int y2, unsigned char palette){
 	}
 	
 	// Draw bottom
-	for(col = x1; col <= x2; col++){
-		*vram = palette;
-		// Move to next pixel in line
-		vram++;
-	}
+	//for(col = x1; col <= x2; col++){
+	//	*vram = palette;
+	//	// Move to next pixel in line
+	//	vram++;
+	//}
+	memset(vram, palette, x2 - x1);
+	vram += (x2 - x1);
 	
 	return 0;
 }

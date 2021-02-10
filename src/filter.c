@@ -28,10 +28,8 @@
 
 int compare(const void *op1, const void *op2){
 	// As defined in the OpenWatcom C Library reference guide
-	
-    const char **p1 = (const char **) op1;
-    const char **p2 = (const char **) op2;
-    return(strcmp(*p1, *p2));
+    
+    return(strcmp(*(const char**)op1, *(const char**)op1));
 }
 
 int sortFilterKeys(state_t *state, int items){
@@ -108,8 +106,8 @@ int filter_GetGenres(state_t *state, gamedata_t *gamedata){
 		printf("%s.%d\t Sorting keywords\n", __FILE__, __LINE__);
 	}
 	sortFilterKeys(state, next_pos);
-	for(a=0;a<next_pos;a++){
-		if (FILTER_VERBOSE){
+	if (FILTER_VERBOSE){
+		for(a=0;a<next_pos;a++){
 			printf("%s.%d\t Info - Keyword %d: [%s]\n", __FILE__, __LINE__, a, state->filter_strings[a]);
 		}
 	}
@@ -190,8 +188,8 @@ int filter_GetSeries(state_t *state, gamedata_t *gamedata){
 		printf("%s.%d\t Sorting keywords\n", __FILE__, __LINE__);
 	}
 	sortFilterKeys(state, next_pos);
-	for(a=0;a<next_pos;a++){
-		if (FILTER_VERBOSE){
+	if (FILTER_VERBOSE){
+		for(a=0;a<next_pos;a++){
 			printf("%s.%d\t Info - Keyword %d: [%s]\n", __FILE__, __LINE__, a, state->filter_strings[a]);
 		}
 	}
@@ -200,6 +198,100 @@ int filter_GetSeries(state_t *state, gamedata_t *gamedata){
 	if (FILTER_VERBOSE){
 		printf("%s.%d\t Searched %d games\n", __FILE__, __LINE__, c);
 		printf("%s.%d\t Total of %d series filters added\n", __FILE__, __LINE__, next_pos);
+	} 
+	free(launchdat);
+	return FILTER_OK;
+}
+
+int filter_GetCompany(state_t *state, gamedata_t *gamedata){
+	// Get all of the companies set in game metadata
+	
+	int i;
+	int a;
+	int c;
+	int found_dev;
+	int found_pub;
+	int status;
+	int next_pos;
+	gamedata_t *gamedata_head;
+	launchdat_t *launchdat;
+	
+	launchdat = (launchdat_t *) malloc(sizeof(launchdat_t));
+	gamedata_head = gamedata; // Store first item
+	
+	if (FILTER_VERBOSE){
+		printf("%s.%d\t Building company keyword selection list\n", __FILE__, __LINE__);
+	}
+	if (FILTER_VERBOSE){
+		printf("%s.%d\t Info - Clearing existing filter keywords list\n", __FILE__, __LINE__);
+	}
+	// Empty list
+	for(i =0; i <MAXIMUM_FILTER_STRINGS; i++){
+		memset(state->filter_strings[i], '\0', MAX_STRING_SIZE);
+	}
+	
+	i = 0;
+	c = 0;
+	next_pos = 0;
+	while(gamedata != NULL){
+		
+		// Does game have metadata
+		if (gamedata->has_dat){
+			
+			// Load launch metadata
+			status = getLaunchdata(gamedata, launchdat);
+			if (status == 0){
+				
+				// Does the developer or publisher field match?
+				if ((strcmp(launchdat->developer, "") != 0) || (strcmp(launchdat->publisher, "") != 0)){
+				
+					// Does this company already exist?
+					found_pub = 0;
+					found_dev = 0;
+					for(a=0;a<MAXIMUM_FILTER_STRINGS;a++){
+						if (strcmp(state->filter_strings[a], launchdat->developer) == 0){
+							found_dev = 1;
+						}
+						if (strcmp(state->filter_strings[a], launchdat->publisher) == 0){
+							found_pub = 1;
+						}
+					}
+					// This company isn't found yet, add it to the list of keywords
+					if (found_dev == 0){
+						if (FILTER_VERBOSE){
+							printf("%s.%d\t Info - Found developer: [%s]\n", __FILE__, __LINE__, launchdat->developer);
+						}
+						strncpy(state->filter_strings[next_pos], launchdat->developer, MAX_STRING_SIZE);
+						next_pos++;
+					}
+					if (found_pub == 0){
+						if (FILTER_VERBOSE){
+							printf("%s.%d\t Info - Found publisher: [%s]\n", __FILE__, __LINE__, launchdat->publisher);
+						}
+						strncpy(state->filter_strings[next_pos], launchdat->publisher, MAX_STRING_SIZE);
+						next_pos++;
+					}
+				}
+			}
+		}
+		c++;
+		gamedata = gamedata->next;
+	}
+	
+	if (FILTER_VERBOSE){
+		printf("%s.%d\t Sorting keywords\n", __FILE__, __LINE__);
+	}
+	sortFilterKeys(state, next_pos);
+	if (FILTER_VERBOSE){
+		for(a=0;a<next_pos;a++){
+			printf("%s.%d\t Info - Keyword %d: [%s]\n", __FILE__, __LINE__, a, state->filter_strings[a]);
+		}
+	}
+	state->available_filter_strings = next_pos;
+	
+	if (FILTER_VERBOSE){
+		printf("%s.%d\t Searched %d games\n", __FILE__, __LINE__, c);
+		printf("%s.%d\t Total of %d company filters added\n", __FILE__, __LINE__, next_pos);
 	} 
 	free(launchdat);
 	return FILTER_OK;
@@ -221,7 +313,7 @@ int filter_None(state_t *state, gamedata_t *gamedata){
 	}
 	// Empty list
 	for(i =0; i <SELECTION_LIST_SIZE; i++){
-		state->selected_list[i] = NULL;
+		state->selected_list[i] = -1;
 	}
 	if (FILTER_VERBOSE){
 		printf("%s.%d\t Info - Clearing existing filter string list\n", __FILE__, __LINE__);
@@ -283,7 +375,7 @@ int filter_Genre(state_t *state, gamedata_t *gamedata){
 	}
 	// Empty list
 	for(i =0; i <SELECTION_LIST_SIZE; i++){
-		state->selected_list[i] = NULL;
+		state->selected_list[i] = -1;
 	}
 	if (FILTER_VERBOSE){
 		printf("%s.%d\t Info - Clearing existing filter string list\n", __FILE__, __LINE__);
@@ -378,7 +470,7 @@ int filter_Series(state_t *state, gamedata_t *gamedata){
 	}
 	// Empty list
 	for(i =0; i <SELECTION_LIST_SIZE; i++){
-		state->selected_list[i] = NULL;
+		state->selected_list[i] = -1;
 	}
 	if (FILTER_VERBOSE){
 		printf("%s.%d\t Info - Clearing existing filter string list\n", __FILE__, __LINE__);
@@ -433,6 +525,103 @@ int filter_Series(state_t *state, gamedata_t *gamedata){
 	if (FILTER_VERBOSE){
 		printf("%s.%d\t Searched %d games\n", __FILE__, __LINE__, c);
 		printf("%s.%d\t Total of %d filtered games in series list\n", __FILE__, __LINE__, i);
+	} 
+	
+	gamedata = gamedata_head;
+	state->selected_max = i; 	// Number of items in selection list
+	state->selected_page = 1;	// Start on page 1
+	state->selected_line = 0;	// Start on line 0
+	state->total_pages = 0;		
+	state->selected_filter_string = 0;
+	state->selected_gameid = state->selected_list[0]; 	// Initial game is the 0th element of the selection list
+	state->selected_game = getGameid(state->selected_gameid, gamedata);
+	for(i = 0; i <= state->selected_max ; i++){
+		if (i % ui_browser_max_lines == 0){
+			state->total_pages++;
+		}
+	}
+	free(launchdat);
+	return FILTER_OK;
+}
+
+int filter_Company(state_t *state, gamedata_t *gamedata){
+	// Filter all games on a specific developer or publisher string
+	int i;
+	int c;
+	int status;
+	gamedata_t *gamedata_head;
+	launchdat_t *launchdat;
+	char filter[MAX_STRING_SIZE];
+	
+	strncpy(filter, state->filter_strings[state->selected_filter_string], MAX_STRING_SIZE);
+	
+	launchdat = (launchdat_t *) malloc(sizeof(launchdat_t));
+	
+	gamedata_head = gamedata; // Store first item
+	
+	if (FILTER_VERBOSE){
+		printf("%s.%d\t Building company selection list [%s]\n", __FILE__, __LINE__, filter);
+	}
+	if (FILTER_VERBOSE){
+		printf("%s.%d\t Info - Clearing existing selection list\n", __FILE__, __LINE__);
+	}
+	// Empty list
+	for(i =0; i <SELECTION_LIST_SIZE; i++){
+		state->selected_list[i] = -1;
+	}
+	if (FILTER_VERBOSE){
+		printf("%s.%d\t Info - Clearing existing filter string list\n", __FILE__, __LINE__);
+	}
+	// Empty filter string list
+	for(i =0; i <MAXIMUM_FILTER_STRINGS; i++){
+		memset(state->filter_strings[i], '\0', MAX_STRING_SIZE);
+	}
+	
+	state->selected_max = 0; 	
+	state->selected_page = 1;	
+	state->selected_line = 0;	
+	state->total_pages = 0;		
+	state->selected_gameid = -1;
+	state->selected_game = NULL;
+	
+	i = 0;
+	c = 0;
+	while(gamedata != NULL){
+		
+		// Does game have metadata
+		if (gamedata->has_dat){
+			
+			// Load launch metadata
+			status = getLaunchdata(gamedata, launchdat);
+			if (status == 0){
+				
+				if (FILTER_VERBOSE){
+					printf("%s.%d\t Info - Checking %s OR %s == %s\n", __FILE__, __LINE__, launchdat->developer, launchdat->publisher, filter);
+				}
+				
+				// Does the publisher or developer field match?
+				if ((strncmp(launchdat->developer, filter, MAX_STRING_SIZE) == 0) || (strncmp(launchdat->publisher, filter, MAX_STRING_SIZE) == 0)){
+				
+					if (FILTER_VERBOSE){
+						printf("%s.%d\t Yes - adding Game ID: [%d], %s\n", __FILE__, __LINE__, gamedata->gameid, gamedata->name);
+					}
+					
+					// Add the selected gameid to the selection list
+					state->selected_list[i] = gamedata->gameid;
+					i++;
+				}
+			} else {
+				if (FILTER_VERBOSE){
+					printf("%s.%d\t Warning, metadata not loaded for Game ID: [%d], %s\n", __FILE__, __LINE__, gamedata->gameid, gamedata->name);
+				}
+			}
+		}
+		c++;
+		gamedata = gamedata->next;
+	}
+	if (FILTER_VERBOSE){
+		printf("%s.%d\t Searched %d games\n", __FILE__, __LINE__, c);
+		printf("%s.%d\t Total of %d filtered games in company list\n", __FILE__, __LINE__, i);
 	} 
 	
 	gamedata = gamedata_head;

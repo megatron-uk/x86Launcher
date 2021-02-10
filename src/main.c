@@ -61,62 +61,52 @@ int main() {
 	int has_images;
 	int old_gameid;
 	int i;									// Loop counter
-	int active_pane;						// Indicator of which UI element is active and consuming input
+	int active_pane;							// Indicator of which UI element is active and consuming input
 	int exit;								// Status flag indicating user wants to quit
 	int user_input, joy_input, key_input;	// User input state - either a keyboard code or joystick direction/button
-	int scrape_dirs;						// NUmber of directories being scraped
+	int scrape_dirs;							// NUmber of directories being scraped
 	int scrape_progress_chunk_size;			// Size of progress bar increase per directory being scraped
 	int progress;							// Progress bar percentage
 	int super;								// Supervisor mode flag
 	int found, found_tmp;					// Number of gamedirs/games found
-	int verbose;							// Controls output of additional logging/text
+	int verbose;								// Controls output of additional logging/text
 	int status;								// Generic function return status variable
 	char msg[64];							// Message buffer
-	clock_t start_time, end_time, end_time2;
-	clock_t t1, t2;
-	clock_t last;
-	FILE *screenshot_file;
-	FILE *savefile;
-	
-	bmpdata_t *bmp = NULL;
-	
-	state_t *state = NULL;
-	bmpdata_t *screenshot_bmp = NULL;	
-	bmpstate_t *screenshot_bmp_state = NULL;	
-	gamedata_t *gamedata = NULL;			// An initial gamedata record for the first game directory we read
+	clock_t start_time, end_time, end_time2;	// Performance counters, set 1
+	clock_t t1, t2;							// Performance counters, set 2
+	clock_t last;							// Timer for detecting last user input
+	FILE *screenshot_file;					// File handle for artwork bitmap reading
+	FILE *savefile;							// File handle for saving game list data
+	state_t *state = NULL;					// Current state of the UI, including selected game, page, etc
+	bmpdata_t *screenshot_bmp = NULL;		// Reads artwork header
+	bmpstate_t *screenshot_bmp_state = NULL;	// State buffer for reading artwork line-by-line
+	gamedata_t *gamedata = NULL;				// An initial gamedata record for the first game directory we read
 	gamedata_t *gamedata_head = NULL;		// Constant pointer to the start of the gamedata list
 	launchdat_t *launchdat = NULL;			// When a single game is selected, we attempt to load its metadata file from disk
 	imagefile_t *imagefile = NULL;			// When a single game is selected, we attempt to load a list of the screenshots from metadata
-	imagefile_t *imagefile_head = NULL;		// Constant pointer to the start of the game screenshot list
+	//imagefile_t *imagefile_head = NULL;		// Constant pointer to the start of the game screenshot list
 	gamedir_t *gamedir = NULL;				// List of the game search directories, as defined in our INIFILE
-	config_t *config = NULL;				// Configuration data as defined in our INIFILE
-		
-	screenshot_file = NULL;
-	has_screenshot = 0;
-	has_launchdat = 0;
-	has_images = 0;
-	old_gameid = -1;
+	config_t *config = NULL;					// Configuration data as defined in our INIFILE		
+	screenshot_file = NULL;					// Artwork file has not been set yet
+	has_screenshot = 0;						// No screenshots unless detected
+	has_launchdat = 0;						// No launchdat metadata unless loaded
+	has_images = 0;							// No images until processed from metadata
+	old_gameid = -1;							// No previous game was selected
 	active_pane = BROWSER_PANE;				// Set initial focus to browser pane
 	user_input = joy_input = key_input = 0;	// Initial state of all input variables
 	exit = 0;								// Dont exit from main loop unless specified
-	scrape_dirs = 0;						// Default to 0 directories found
+	scrape_dirs = 0;							// Default to 0 directories found
 	progress = 0;							// Default to 0 progress bar size
 	found = found_tmp = 0;					// Counter of the number of found directories/gamedata items
-	verbose = 1;							// Initial debug/verbose setting; overidden from INIFILE, if set
+	verbose = 1;								// Initial debug/verbose setting; overidden from INIFILE, if set
 	
 	printf("%s starting...\n", MY_NAME);
-	
-	//zeroRunBat();
 	
 	/* ************************************** */
 	/* Create a new empty gamedata entry */
 	/* ************************************** */
 	gamedata = (gamedata_t *) malloc(sizeof(gamedata_t));
 	gamedata->next = NULL;
-	
-	// New bmp data structure
-	bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
-    bmp->pixels = NULL;
 	
 	/* ************************************** */
 	/* Parse the gamedirs that are set */
@@ -137,6 +127,12 @@ int main() {
 	// Screenshot state line buffer
 	screenshot_bmp_state = (bmpstate_t *) malloc(sizeof(bmpstate_t));
 	screenshot_bmp_state->pixels = NULL;
+	
+	// List of artwork for a game
+	imagefile = (imagefile_t *) malloc(sizeof(imagefile_t));
+	
+	// Launchdat metadata structure
+	launchdat = (launchdat_t *) malloc(sizeof(launchdat_t));
 	
 	/* ************************************** */
 	/* Create an instance of the UI state data */
@@ -434,8 +430,32 @@ int main() {
 	ui_ProgressMessage("Building initial selection list...");
 	gfx_Flip();
 	
+	// Select the first game
 	if (gamedata->next != NULL){
 		gamedata = gamedata->next;
+	}
+	// Load metadata and artwork list for the first game
+	state->selected_game = gamedata;
+	state->selected_gameid = gamedata->gameid;
+	state->has_launchdat = gamedata->has_dat;
+	state->has_images = 0;
+	if (state->has_launchdat){
+		if (config->verbose){
+			printf("%s.%d\t Loading metadata for initial selection id [%d]\n", __FILE__, __LINE__, state->selected_gameid);	
+		}
+		status = getLaunchdata(state->selected_game, launchdat);
+		if (status != -1){
+			state->has_launchdat = 1;
+			if (config->verbose){
+				printf("%s.%d\t Loading artwork for initial selection id [%d]\n", __FILE__, __LINE__, state->selected_gameid);
+			}
+			status = getImageList(launchdat, imagefile);
+			if (status != -1){
+				state->has_images = 1;
+			}
+		} else {
+			state->has_launchdat = 0;
+		}
 	}
 	
 	// Apply no-filtering to list, show all games
@@ -447,6 +467,8 @@ int main() {
 		printf("%s.%d\t Info - selected_line: %d\n", __FILE__, __LINE__, state->selected_line);
 		printf("%s.%d\t Info - total_pages: %d\n", __FILE__, __LINE__, state->total_pages);
 		printf("%s.%d\t Info - selected_gameid: %d\n", __FILE__, __LINE__, state->selected_gameid);
+		printf("%s.%d\t Info - selected game: %s\n", __FILE__, __LINE__, state->selected_game->name);
+		printf("%s.%d\t Info - has_launchdat: %d\n", __FILE__, __LINE__, state->has_launchdat);
 	}
 	
 	// ======================
@@ -532,7 +554,7 @@ int main() {
 	
 	// Update info with current selection
 	ui_ReselectCurrentGame(state);
-	status = ui_UpdateInfoPane(state, gamedata, launchdat);
+	status = ui_UpdateInfoPane(state, state->selected_game, launchdat);
 	if (status != UI_OK){
 		printf("ERROR! Unable to update info pane contents!\n");
 		free(config);
@@ -549,15 +571,14 @@ int main() {
 	end_time = clock();
 	timers_Print(start_time, end_time, "Flip GFX buffer", config->timers);
 	
-	// Launchdat metadata structure
-	launchdat = (launchdat_t *) malloc(sizeof(launchdat_t));	
-	
 	// ======================
 	//
 	// Main loop here
 	//
-	// ======================	
-	//ui_StatusMessage("Waiting for user input...");
+	// ======================
+	if (config->verbose){
+		printf("%s.%d\t Entering main input loop now...\n", __FILE__, __LINE__);
+	}
 	while(exit == 0){
 		user_input = input_get();
 		
@@ -599,8 +620,6 @@ int main() {
 					writeRunBat(state, launchdat);
 					exit = 1;
 					break;
-				case(input_none):
-					break;
 				default:
 					break;
 			}
@@ -630,10 +649,12 @@ int main() {
 					}
 					ui_DrawMainWindow();
 					ui_UpdateBrowserPane(state, gamedata);
+					gfx_Flip();
 					ui_DrawInfoBox();
 					ui_ReselectCurrentGame(state);
 					ui_UpdateInfoPane(state, gamedata, launchdat);
 					ui_UpdateBrowserPaneStatus(state);
+					gfx_Flip();
 					ui_DisplayArtwork(screenshot_file, screenshot_bmp, screenshot_bmp_state, state, imagefile);
 					gfx_Flip();
 					break;
@@ -656,8 +677,6 @@ int main() {
 					ui_DrawConfirmPopup(state, gamedata, launchdat);
 					gfx_Flip();
 					break;
-				case(input_none):
-					break;
 				default:
 					break;
 			}
@@ -674,8 +693,6 @@ int main() {
 					// Exit the application
 					exit = 1;
 					zeroRunBat();
-					break;
-				case(input_none):
 					break;
 				default:
 					break;
@@ -728,10 +745,12 @@ int main() {
 						}
 						ui_DrawMainWindow();
 						ui_UpdateBrowserPane(state, gamedata);
+						gfx_Flip();
 						ui_DrawInfoBox();
 						ui_ReselectCurrentGame(state);
 						ui_UpdateInfoPane(state, gamedata, launchdat);
 						ui_UpdateBrowserPaneStatus(state);
+						gfx_Flip();
 						ui_DisplayArtwork(screenshot_file, screenshot_bmp, screenshot_bmp_state, state, imagefile);
 						gfx_Flip();
 						user_input = input_get();
@@ -752,6 +771,10 @@ int main() {
 							filter_GetSeries(state, gamedata);
 						}
 						
+						if (state->selected_filter == FILTER_COMPANY){
+							filter_GetCompany(state, gamedata);
+						}
+						
 						// Bring up the filter keyword selection pane
 						ui_DrawFilterPopup(state, 0);
 						gfx_Flip();
@@ -769,14 +792,14 @@ int main() {
 					}
 					ui_DrawMainWindow();
 					ui_UpdateBrowserPane(state, gamedata);
+					gfx_Flip();
 					ui_DrawInfoBox();
 					ui_ReselectCurrentGame(state);
 					ui_UpdateInfoPane(state, gamedata, launchdat);
 					ui_UpdateBrowserPaneStatus(state);
+					gfx_Flip();
 					ui_DisplayArtwork(screenshot_file, screenshot_bmp, screenshot_bmp_state, state, imagefile);
 					gfx_Flip();
-					break;
-				case(input_none):
 					break;
 				default:
 					break;
@@ -790,6 +813,10 @@ int main() {
 		//
 		// Genre: RPG, Adventure, Shooter, etc.
 		// Series: Lodoss War, Amaranth, Touhou etc.
+		// Company: SEGA, Activiation, Gremlin Graphics etc.
+		//
+		// Note that the multi-select pane for technical specs
+		// is a different window to this.
 		//
 		// ==================================================
 		if (active_pane == FILTER_PANE){
@@ -799,7 +826,14 @@ int main() {
 					exit = 1;
 					zeroRunBat();
 					break;
+				case(input_scroll_up):
+					// Page up key - move to next PAGE of filter keywords
+					break;
+				case(input_scroll_down):
+					// Page down key - move to previous PAGE of filter keywords
+					break;	
 				case(input_up):
+					// Cursor key up - move to next filter keyword up
 					if (config->verbose){
 						printf("%s.%d\t Toggle filter selection up\n", __FILE__, __LINE__);	
 					}
@@ -807,6 +841,7 @@ int main() {
 					gfx_Flip();
 					break;
 				case(input_down):
+					// Cursor key down - move to next filter keyword down
 					if (config->verbose){
 						printf("%s.%d\t Toggle filter selection down\n", __FILE__, __LINE__);	
 					}
@@ -823,6 +858,17 @@ int main() {
 						// Now apply the chosen filter
 						status = filter_Series(state, gamedata);
 					}
+					
+					if (state->selected_filter == FILTER_COMPANY){
+						// Now apply the chosen filter
+						status = filter_Company(state, gamedata);
+					}
+					
+					//if (state->selected_filter == FILTER_TECH){
+					//	// Now apply the chosen filter
+					//	status = filter_Tech(state, gamedata);
+					//}
+					
 					if (config->verbose){
 						printf("%s.%d\t Closing filter popup(s)\n", __FILE__, __LINE__);	
 					}
@@ -833,10 +879,12 @@ int main() {
 					}
 					ui_DrawMainWindow();
 					ui_UpdateBrowserPane(state, gamedata);
+					gfx_Flip();
 					ui_DrawInfoBox();
 					ui_ReselectCurrentGame(state);
 					ui_UpdateInfoPane(state, gamedata, launchdat);
 					ui_UpdateBrowserPaneStatus(state);
+					gfx_Flip();
 					ui_DisplayArtwork(screenshot_file, screenshot_bmp, screenshot_bmp_state, state, imagefile);
 					gfx_Flip();
 					user_input = input_get();
@@ -852,14 +900,14 @@ int main() {
 					}
 					ui_DrawMainWindow();
 					ui_UpdateBrowserPane(state, gamedata);
+					gfx_Flip();
 					ui_DrawInfoBox();
 					ui_ReselectCurrentGame(state);
 					ui_UpdateInfoPane(state, gamedata, launchdat);
 					ui_UpdateBrowserPaneStatus(state);
+					gfx_Flip();
 					ui_DisplayArtwork(screenshot_file, screenshot_bmp, screenshot_bmp_state, state, imagefile);
 					gfx_Flip();
-					break;
-				case(input_none):
 					break;
 				default:
 					break;
@@ -1042,11 +1090,22 @@ int main() {
 				case(input_left):
 					// Cycle left through artwork
 					start_time = clock();
+					/*
 					if (imagefile != NULL){
 						if (imagefile->prev != NULL){
 							imagefile = imagefile->prev;
 						} else {
 							imagefile = imagefile_head;
+						}
+						ui_DisplayArtwork(screenshot_file, screenshot_bmp, screenshot_bmp_state, state, imagefile);
+						gfx_Flip();
+					}
+					*/
+					if (imagefile->last > -1){
+						if (imagefile->selected > 0){
+							imagefile->selected -= 1;
+						} else {
+							imagefile->selected = imagefile->last;
 						}
 						ui_DisplayArtwork(screenshot_file, screenshot_bmp, screenshot_bmp_state, state, imagefile);
 						gfx_Flip();
@@ -1057,7 +1116,7 @@ int main() {
 				case(input_right):
 					// Scroll right through artwork - if available
 					start_time = clock();
-					if (imagefile != NULL){
+					/*if (imagefile != NULL){
 						if (imagefile->next != NULL){
 							imagefile = imagefile->next;
 						} else {
@@ -1066,10 +1125,18 @@ int main() {
 						ui_DisplayArtwork(screenshot_file, screenshot_bmp, screenshot_bmp_state, state, imagefile);
 						gfx_Flip();
 					}
+					*/
+					if (imagefile->last != NULL){
+						if (imagefile->selected < imagefile->last){
+							imagefile->selected += 1;
+						} else {
+							imagefile->selected = imagefile->first;
+						}
+						ui_DisplayArtwork(screenshot_file, screenshot_bmp, screenshot_bmp_state, state, imagefile);
+						gfx_Flip();
+					}
 					end_time = clock();
 					timers_Print(start_time, end_time, "Artwork scroll Right", config->timers);
-					break;
-				case(input_none):
 					break;
 				default:
 					break;
@@ -1099,22 +1166,6 @@ int main() {
 					// Destroy current list of artwork
 					// ======================
 					
-					if (state->has_images == 1){
-						t1 = clock();
-						if (config->verbose){
-							printf("%s.%d\t Previous entry had images, clearing list\n", __FILE__, __LINE__);
-						}
-						imagefile = imagefile_head;
-						removeImagefile(imagefile);
-						if (imagefile != NULL){
-							if (config->verbose){
-								printf("%s.%d\t Freeing memory from previous image list\n", __FILE__, __LINE__);
-							}
-							free(imagefile);
-						}
-						t2 = clock();
-						timers_Print(t1, t2, "- Clear artwork list", config->timers);
-					}
 					// Clear artwork window
 					t1 = clock();
 					gfx_BoxFill(ui_artwork_xpos, ui_artwork_ypos, ui_artwork_xpos + 320, ui_artwork_ypos + 200, PALETTE_UI_BLACK);
@@ -1126,14 +1177,14 @@ int main() {
 					// ======================
 					// Destroy previous launch.dat
 					// ======================
-					if (state->has_launchdat){
-						if (launchdat != NULL){
-							if (config->verbose){
-								printf("%s.%d\t Previous entry had metadata, freeing memory\n", __FILE__, __LINE__);
-							}
-							free(launchdat);
-						}
-					}
+					//if (state->has_launchdat){
+					//	if (launchdat != NULL){
+					//		if (config->verbose){
+					//			printf("%s.%d\t Previous entry had metadata, freeing memory\n", __FILE__, __LINE__);
+					//		}
+					//		free(launchdat);
+					//	}
+					//}
 					state->has_launchdat = 0;
 					
 					// ======================
@@ -1161,7 +1212,7 @@ int main() {
 								printf("%s.%d\t Allocating memory and loading metadata for [%s]\n", __FILE__, __LINE__, state->selected_game->name);
 							}
 							t1 = clock();
-							launchdat = (launchdat_t *) malloc(sizeof(launchdat_t));	
+							//launchdat = (launchdat_t *) malloc(sizeof(launchdat_t));	
 							status = getLaunchdata(state->selected_game, launchdat);
 							if (status != 0){
 								if (config->verbose){
@@ -1182,11 +1233,13 @@ int main() {
 						if (state->has_launchdat){
 							t1 = clock();
 							if (config->verbose){
-								printf("%s.%d\t Allocating memory for image list\n", __FILE__, __LINE__);
+								printf("%s.%d\t Building image list\n", __FILE__, __LINE__);
 							}
-							imagefile = (imagefile_t *) malloc(sizeof(imagefile_t));
-							imagefile->next = NULL;
-							imagefile_head = imagefile;
+							
+							//imagefile = (imagefile_t *) malloc(sizeof(imagefile_t));
+							//imagefile->next = NULL;
+							//imagefile_head = imagefile;
+							
 							status = getImageList(launchdat, imagefile);
 							if (status > 0){
 								state->has_images = 1;
@@ -1199,11 +1252,11 @@ int main() {
 						// Select first screenshot/artwork to show
 						// =======================
 						if (state->has_images){
-							if (imagefile->next != NULL){
+							if (imagefile->first > -1){
 								if (config->verbose){
-									printf("%s.%d\t Selected artwork filename [%s]\n", __FILE__, __LINE__, imagefile->next->filename);
+									printf("%s.%d\t Selected artwork filename [%s]\n", __FILE__, __LINE__, imagefile->filename[imagefile->first]);
 								}
-								sprintf(msg, "%s\\%s", state->selected_game->path, imagefile->next->filename);
+								sprintf(msg, "%s\\%s", state->selected_game->path, imagefile->filename[imagefile->first]);
 								strncpy(state->selected_image, msg, 65);
 							}
 						}
@@ -1218,12 +1271,10 @@ int main() {
 						old_gameid = state->selected_gameid;
 						t2 = clock();
 						timers_Print(t1, t2, "- Update UI Info pane", config->timers);
-						//gfx_Flip();
 		
 						// Display artwork/first screenshot
 						t1 = clock();
 						ui_DisplayArtwork(screenshot_file, screenshot_bmp, screenshot_bmp_state, state, imagefile);
-						gfx_Flip();
 						t2 = clock();
 						timers_Print(t1, t2, "- Display artwork", config->timers);
 					}
@@ -1233,11 +1284,28 @@ int main() {
 					end_time = clock();
 					timers_Print(start_time, end_time, "Redraw New Game", config->timers);
 				}
+				gfx_Flip();
 			}
 		}
 	}
 	
 	ui_Close();
 	gfx_Close();
+	
+	printf("x86Launcher exiting...\n\n");
+	
+	printf("%s.%d\t Deallocating objects\n", __FILE__, __LINE__);
+	removeGamedata(gamedata);
+	free(launchdat);	
+	
+	printf("%s.%d\t Deallocating open artwork\n", __FILE__, __LINE__);
+	bmp_Destroy(screenshot_bmp);
+	bmp_DestroyState(screenshot_bmp_state);
+	
+	printf("%s.%d\t Closing open files\n", __FILE__, __LINE__);
+	fclose(screenshot_file);
+	fclose(savefile);
+	
+	printf("\nExited!\n", __FILE__, __LINE__);
 	return 0;
 }

@@ -25,12 +25,12 @@
 #define DEFAULT_PUBLISHER	""					// Default publisher
 #define DEFAULT_DEVELOPER	""					// Default developer
 #define MAX_IMAGES			16					// max number of images we try to load
-#define IMAGE_BUFFER_SIZE	256					// Maximum size of game screenshot string (8 + 22 + overhead) 
+#define IMAGE_BUFFER_SIZE	256					// Maximum size of bytes in game screenshot string (8 + 22 + overhead) 
 #define MAX_DIRS				16					// Maximum number of game search paths - 16 sounds... okay?
 #define MAX_FILENAME_SIZE    13					// 8 + 3 + 1 for the ., plus 1 for \0
 #define MAX_STRING_SIZE		32
 #define MAX_SEARCHDIRS_SIZE	1024
-#define DATA_VERBOSE			0
+#define DATA_VERBOSE			1
 #define MAX_PATH_SIZE		65
 
 // A linked list of the games which we have scraped
@@ -84,11 +84,19 @@ typedef struct videodat {
 } videodat_t;
 
 // A list of artwork, parsed from the launchdat file included with a game.
+//typedef struct imagefile {
+//	char filename[MAX_FILENAME_SIZE];	// Filename of an image
+//	struct imagefile *prev;				// Pointer to the previous image file for this game
+//	struct imagefile *next;				// Pointer to the next image file for this game
+//} imagefile_t;
+
 typedef struct imagefile {
-	char filename[MAX_FILENAME_SIZE];	// Filename of an image
-	struct imagefile *prev;				// Pointer to the previous image file for this game
-	struct imagefile *next;				// Pointer to the next image file for this game
+	char filename[MAX_IMAGES][MAX_FILENAME_SIZE];	// Filename of an image
+	short selected;
+	short first;
+	short last;
 } imagefile_t;
+
 
 // A list of game directories to search and scrape at run time.
 typedef struct gamedir {
@@ -98,11 +106,11 @@ typedef struct gamedir {
 
 // Holds the configuration of our application from launcher.ini
 typedef struct config {
-	int timers;						// Whether to time function calls
-	int verbose;						// Verbose/debug flag
-	int save;						// Save the list of all games to a text file
-	int preload_names;				// Flag to indicate wheter a launch.dat is loaded at scrape-time to pick up real names
-	int keyboard_test;
+	short timers;						// Whether to time function calls
+	short verbose;						// Verbose/debug flag
+	short save;						// Save the list of all games to a text file
+	short preload_names;				// Flag to indicate wheter a launch.dat is loaded at scrape-time to pick up real names
+	short keyboard_test;
 	char dirs[MAX_SEARCHDIRS_SIZE];	// String containing all game dirs to search - it will then be parsed into a list below:
 	struct gamedir *dir;				// List of all the game search dirs
 } config_t;
@@ -111,7 +119,7 @@ typedef struct config {
 gamedata_t *		getLastGamedata(gamedata_t *gamedata);
 imagefile_t *	getLastImage(imagefile_t *imagefile);
 int				removeGamedata(gamedata_t *gamedata);
-int 				removeImagefile(imagefile_t *imagefile);
+//int 				removeImagefile(imagefile_t *imagefile);
 int 				sortGamedata(gamedata_t *gamedata, int verbose);
 int 				swapGamedata(gamedata_t *gamedata1, gamedata_t *gamedata2);
 int 				getLaunchdata(gamedata_t *gamedata, launchdat_t *launchdat);

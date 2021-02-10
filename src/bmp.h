@@ -106,8 +106,9 @@ typedef struct fontdata {
 	unsigned char 			symbol[96][16][16]; // Only up to 16px high, 16 px wide fonts
 }  fontdata_t;
 
-void	bmp_Destroy(bmpdata_t *bmpdata);
-void	bmp_DestroyFont(fontdata_t *fontdata);
+void		bmp_Destroy(bmpdata_t *bmpdata);
+void		bmp_DestroyState(bmpstate_t *bmpstate);
+void		bmp_DestroyFont(fontdata_t *fontdata);
 int 		bmp_ReadFont(FILE *bmp_image, bmpdata_t *bmpdata, fontdata_t *fontdata, unsigned char header, unsigned char palette, unsigned char data, unsigned char font_width, unsigned char font_height);
 int 		bmp_ReadImage(FILE *bmp_image, bmpdata_t *bmpdata, unsigned char header, unsigned char palette, unsigned char data);
 int 		bmp_ReadImageHeader(FILE *bmp_image, bmpdata_t *bmpdata);
