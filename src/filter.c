@@ -309,6 +309,98 @@ int filter_GetCompany(state_t *state, gamedata_t *gamedata, launchdat_t *filterd
 	return FILTER_OK;
 }
 
+
+int filter_GetTechSpecs(state_t *state, gamedata_t *gamedata, launchdat_t *filterdat){
+	// Get a list of tech specs that we can filter games on
+	
+	// Unlike genres, companies and series, these filters are not actually
+	// user-defined within game metadata, instead we already know which
+	// options are available.
+	
+	int i;
+	int next_pos;
+	next_pos = 0;
+	
+	if (FILTER_VERBOSE){
+		printf("%s.%d\t Building company keyword selection list\n", __FILE__, __LINE__);
+	}
+	if (FILTER_VERBOSE){
+		printf("%s.%d\t Info - Clearing existing filter keywords list\n", __FILE__, __LINE__);
+	}
+	// Empty list
+	for(i =0; i <MAXIMUM_FILTER_STRINGS; i++){
+		memset(state->filter_strings[i], '\0', MAX_STRING_SIZE);
+	}
+	
+	// Audio/Sound
+	strncpy(state->filter_strings[next_pos], FILTER_STRING_AUDIO_BEEPER, MAX_STRING_SIZE);
+	next_pos++;
+	strncpy(state->filter_strings[next_pos], FILTER_STRING_AUDIO_TANDY, MAX_STRING_SIZE);
+	next_pos++;
+	strncpy(state->filter_strings[next_pos], FILTER_STRING_AUDIO_ADLIB, MAX_STRING_SIZE);
+	next_pos++;
+	strncpy(state->filter_strings[next_pos], FILTER_STRING_AUDIO_SB, MAX_STRING_SIZE);
+	next_pos++;
+	strncpy(state->filter_strings[next_pos], FILTER_STRING_AUDIO_MT32, MAX_STRING_SIZE);
+	next_pos++;
+	strncpy(state->filter_strings[next_pos], FILTER_STRING_AUDIO_GM, MAX_STRING_SIZE);
+	next_pos++;
+	strncpy(state->filter_strings[next_pos], FILTER_STRING_AUDIO_COVOX, MAX_STRING_SIZE);
+	next_pos++;
+	strncpy(state->filter_strings[next_pos], FILTER_STRING_AUDIO_DISNEY, MAX_STRING_SIZE);
+	next_pos++;
+	strncpy(state->filter_strings[next_pos], FILTER_STRING_AUDIO_GUS, MAX_STRING_SIZE);
+	next_pos++;
+	
+	// Video
+	strncpy(state->filter_strings[next_pos], FILTER_STRING_VIDEO_TEXT, MAX_STRING_SIZE);
+	next_pos++;
+	strncpy(state->filter_strings[next_pos], FILTER_STRING_VIDEO_HERCULES, MAX_STRING_SIZE);
+	next_pos++;
+	strncpy(state->filter_strings[next_pos], FILTER_STRING_VIDEO_TANDY, MAX_STRING_SIZE);
+	next_pos++;
+	strncpy(state->filter_strings[next_pos], FILTER_STRING_VIDEO_CGA, MAX_STRING_SIZE);
+	next_pos++;
+	strncpy(state->filter_strings[next_pos], FILTER_STRING_VIDEO_EGA, MAX_STRING_SIZE);
+	next_pos++;
+	strncpy(state->filter_strings[next_pos], FILTER_STRING_VIDEO_VGA, MAX_STRING_SIZE);
+	next_pos++;
+	strncpy(state->filter_strings[next_pos], FILTER_STRING_VIDEO_SVGA, MAX_STRING_SIZE);
+	next_pos++;
+	
+	// CPU type
+	strncpy(state->filter_strings[next_pos], FILTER_STRING_CPU_8086, MAX_STRING_SIZE);
+	next_pos++;
+	strncpy(state->filter_strings[next_pos], FILTER_STRING_CPU_80286, MAX_STRING_SIZE);
+	next_pos++;
+	strncpy(state->filter_strings[next_pos], FILTER_STRING_CPU_80386, MAX_STRING_SIZE);
+	next_pos++;
+	strncpy(state->filter_strings[next_pos], FILTER_STRING_CPU_80486, MAX_STRING_SIZE);
+	next_pos++;
+	strncpy(state->filter_strings[next_pos], FILTER_STRING_CPU_80586, MAX_STRING_SIZE);
+	next_pos++;
+	strncpy(state->filter_strings[next_pos], FILTER_STRING_RAM_XMS, MAX_STRING_SIZE);
+	next_pos++;
+	strncpy(state->filter_strings[next_pos], FILTER_STRING_RAM_EMS, MAX_STRING_SIZE);
+	next_pos++;
+	strncpy(state->filter_strings[next_pos], FILTER_STRING_MISC_DPMI, MAX_STRING_SIZE);
+	next_pos++;
+	
+	if (FILTER_VERBOSE){
+		printf("%s.%d\t Sorting keywords\n", __FILE__, __LINE__);
+	}
+	sortFilterKeys(state, next_pos);
+	
+	state->available_filter_strings = next_pos;
+	state->current_filter_page = 0;
+	state->available_filter_pages = ceil(((float)next_pos / (float)MAXIMUM_FILTER_STRINGS_PER_PAGE));
+	for(i = 0; i < MAXIMUM_FILTER_STRINGS; i++){
+		state->filter_strings_selected[i] = 0;
+	}
+	
+	return FILTER_OK;
+}
+
 int filter_None(state_t *state, gamedata_t *gamedata){
 	// Apply no filter to the list of gamedata - all games
 	

@@ -70,6 +70,7 @@ typedef struct sounddat {
 	unsigned char gm;					// General MIDI
 	unsigned char covox;					// Covox Speech Thing
 	unsigned char disney;				// Disney Sound Source
+	unsigned char ultrasound;			// Disney Sound Source
 } sounddat_t;
 
 // A videodat object is loaded for the parsed launch.dat file included with a game.
@@ -77,11 +78,25 @@ typedef struct sounddat {
 typedef struct videodat {
 	unsigned char text;					// Game supports text mode
 	unsigned char hercules;				// Hi-resolution Hercules text mode
+	unsigned char tandy;					// Tandy colour graphics	
 	unsigned char cga;					// CGA 4 colour graphics
 	unsigned char ega;					// EGA 16 colour graphics
-	unsigned char vga;					// VGA 256 colour graphics at up to 320x240, or 16 colour at 640x480
+	unsigned char vga;					// VGA 16 or 256 colour graphics at up to 320x240, or 16 colour at 640x480
 	unsigned char svga;					// VGA 256 colour graphics at 640x400 and upwards
 } videodat_t;
+
+// A cpudat object is loaded for the parsed launch.dat file included with a game.
+// Only the currently selected game has this object loaded.
+typedef struct cpudat {
+	unsigned char cpu_8086;				// Can run on IBM XT or 8086
+	unsigned char cpu_286;				// Can run on IBM AT or 286 processors
+	unsigned char cpu_386;				// Can run on 386 or better	
+	unsigned char cpu_486;				// Can run on 486 or better
+	unsigned char cpu_586;				// Can run on 586 or better
+	unsigned char ram_xms;				// Uses XMS memory
+	unsigned char ram_ems;				// Uses EMS memory
+	unsigned char dpmi;					// Uses 32bit protected mode
+} cpudat_t;
 
 // A list of artwork, parsed from the launchdat file included with a game.
 //typedef struct imagefile {

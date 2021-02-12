@@ -29,10 +29,39 @@
 #define	FILTER_OK		0		// Success returncode
 #define FILTER_ERR		-1		// Failure returncode
 
+// Custom filter strings
+#define FILTER_STRING_AUDIO_BEEPER	"Audio: PC Speaker"
+#define FILTER_STRING_AUDIO_TANDY	"Audio: Tandy"
+#define FILTER_STRING_AUDIO_ADLIB	"Audio: Adlib"
+#define FILTER_STRING_AUDIO_SB		"Audio: Soundblaster"
+#define FILTER_STRING_AUDIO_MT32		"Audio: Roland MT32"
+#define FILTER_STRING_AUDIO_GM		"Audio: General MIDI"
+#define FILTER_STRING_AUDIO_COVOX	"Audio: Covox"
+#define FILTER_STRING_AUDIO_DISNEY	"Audio: Disney"
+#define FILTER_STRING_AUDIO_GUS		"Audio: Ultrasound"
+
+#define FILTER_STRING_VIDEO_TEXT		"Video: Text mode"
+#define FILTER_STRING_VIDEO_HERCULES	"Video: Hercules"
+#define FILTER_STRING_VIDEO_TANDY	"Video: Tandy"
+#define FILTER_STRING_VIDEO_CGA		"Video: CGA"
+#define FILTER_STRING_VIDEO_EGA		"Video: EGA"
+#define FILTER_STRING_VIDEO_VGA		"Video: VGA"
+#define FILTER_STRING_VIDEO_SVGA		"Video: SVGA"
+
+#define FILTER_STRING_CPU_8086		"CPU: 8086"
+#define FILTER_STRING_CPU_80286		"CPU: 80286"
+#define FILTER_STRING_CPU_80386		"CPU: 80386"
+#define FILTER_STRING_CPU_80486		"CPU: 80486"
+#define FILTER_STRING_CPU_80586		"CPU: 586/Pentium"
+#define FILTER_STRING_RAM_XMS		"RAM: Extended XMS"
+#define FILTER_STRING_RAM_EMS		"RAM: Expanded EMS"
+#define FILTER_STRING_MISC_DPMI		"Misc: DPMI"
+
 // Function prototypes
 int filter_GetGenres(state_t *state, gamedata_t *gamedata, launchdat_t *filterdat);
 int filter_GetSeries(state_t *state, gamedata_t *gamedata, launchdat_t *filterdat);
 int filter_GetCompany(state_t *state, gamedata_t *gamedata, launchdat_t *filterdat);
+int filter_GetTechSpecs(state_t *state, gamedata_t *gamedata, launchdat_t *filterdat);
 int filter_None(state_t *state, gamedata_t *gamedata);
 int filter_Genre(state_t *state, gamedata_t *gamedata, launchdat_t *filterdat);
 int filter_Series(state_t *state, gamedata_t *gamedata, launchdat_t *filterdat);

@@ -37,6 +37,8 @@ int input_get(){
 		switch(k){
 			case(input_select):
 				return input_select;
+			case(input_toggle):
+				return input_toggle;
 			case(input_cancel):
 				return input_cancel;
 			case(input_switch):
@@ -60,8 +62,9 @@ int input_get(){
 			case(input_help):
 				return input_help;
 			default:
-				printf("Unrecognised input: %x\n", k);
-				//return 1;
+				if (INPUT_VERBOSE){
+					printf("Unrecognised input: %x\n", k);
+				}
 				return input_none;
 		}
 	} else {
@@ -147,6 +150,19 @@ int input_test(){
 		user_input = input_get();
 		if (user_input != input_none){
 			if (user_input != input_scroll_down){
+				printf("[%x] NOT A MATCH!\n", user_input);
+			} else {
+				printf("[%x] OK\n", user_input);
+			}
+			exit = 1;
+		}
+	}
+	exit = 0;
+	printf("Press SPACE\n");
+	while(exit == 0){
+		user_input = input_get();
+		if (user_input != input_none){
+			if (user_input != input_toggle){
 				printf("[%x] NOT A MATCH!\n", user_input);
 			} else {
 				printf("[%x] OK\n", user_input);

@@ -42,8 +42,8 @@ typedef struct state {
 	unsigned char active_pane;			// The pane which currently has focus
 	unsigned char selected_start;		// Which start file to launch, 0==start, 1==alt_start
 	
-	unsigned char selected_filter;		// Which filter to use, 0==none, 1==genre, 2==series
-	unsigned char selected_filter_string;	// Which filter string is selected for non=multichoice filters
+	int selected_filter;					// Which filter to use, 0==none, 1==genre, 2==series
+	int selected_filter_string;			// Which filter string is selected for non=multichoice filters
 	
 	unsigned int available_filter_strings; // How many filter strings are currently available
 	unsigned char available_filter_pages;	// How many pages of filter strings are available

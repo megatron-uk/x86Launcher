@@ -776,8 +776,12 @@ int main() {
 							filter_GetCompany(state, gamedata, filterdat);
 						}
 						
+						if (state->selected_filter == FILTER_TECH){
+							filter_GetTechSpecs(state, gamedata, filterdat);
+						}
+						
 						// Bring up the filter keyword selection pane
-						ui_DrawFilterPopup(state, 0, 0);
+						ui_DrawFilterPopup(state, 0, 0, 0);
 						gfx_Flip();
 						user_input = input_get();
 					}
@@ -837,7 +841,7 @@ int main() {
 						state->current_filter_page--;
 						// Highlight first option on the new page
 						state->selected_filter_string = state->current_filter_page * MAXIMUM_FILTER_STRINGS_PER_PAGE;
-						ui_DrawFilterPopup(state, 0, 0);
+						ui_DrawFilterPopup(state, 0, 0, 0);
 						gfx_Flip();
 					} else {
 						if (config->verbose){
@@ -855,7 +859,7 @@ int main() {
 						state->current_filter_page++;
 						// Highlight first option on the new page
 						state->selected_filter_string = state->current_filter_page * MAXIMUM_FILTER_STRINGS_PER_PAGE;
-						ui_DrawFilterPopup(state, 0, 0);
+						ui_DrawFilterPopup(state, 0, 0, 0);
 						gfx_Flip();
 					} else {
 						if (config->verbose){
@@ -863,12 +867,27 @@ int main() {
 						}
 					}
 					break;	
+				case(input_toggle):
+					// Toggle an option in a multi-choice filter on or off
+					if (state->selected_filter == FILTER_TECH){
+						if (config->verbose){
+							printf("%s.%d\t Toggle filter selection on/off\n", __FILE__, __LINE__);	
+						}
+						state->filter_strings_selected[state->selected_filter_string] = !(state->filter_strings_selected[state->selected_filter_string]);
+						ui_DrawFilterPopup(state, 0, 0, 1);
+						gfx_Flip();
+					} else {
+						if (config->verbose){
+							printf("%s.%d\t Not a toggleable filter selection!\n", __FILE__, __LINE__);	
+						}
+					}
+					break;
 				case(input_up):
 					// Cursor key up - move to next filter keyword up
 					if (config->verbose){
 						printf("%s.%d\t Toggle filter selection up\n", __FILE__, __LINE__);	
 					}
-					ui_DrawFilterPopup(state, -1, 1);
+					ui_DrawFilterPopup(state, -1, 1, 0);
 					gfx_Flip();
 					break;
 				case(input_down):
@@ -876,7 +895,7 @@ int main() {
 					if (config->verbose){
 						printf("%s.%d\t Toggle filter selection down\n", __FILE__, __LINE__);	
 					}
-					ui_DrawFilterPopup(state, 1, 1);
+					ui_DrawFilterPopup(state, 1, 1, 0);
 					gfx_Flip();
 					break;
 				case(input_select):

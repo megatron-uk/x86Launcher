@@ -41,6 +41,7 @@
 // bitmap elements, as we may need to repaint the screen at
 // periodic intervals after having dialogue boxes or menus open.
 bmpdata_t 	*ui_checkbox_bmp;
+bmpdata_t 	*ui_checkbox_choose_bmp;
 bmpdata_t 	*ui_checkbox_empty_bmp;
 bmpdata_t 	*ui_main_bmp;		// We only read the header of this, use gfx_BitmapAsync to display
 bmpdata_t 	*ui_list_bmp;		// We only read the header of this, use gfx_BitmapAsync to display
@@ -90,6 +91,7 @@ void ui_Close(){
 			printf("%s.%d\t ui_Close() Freeing bitmap assets memory\n", __FILE__, __LINE__);
 		}
 		bmp_Destroy(ui_checkbox_bmp);
+		bmp_Destroy(ui_checkbox_choose_bmp);
 		bmp_Destroy(ui_checkbox_empty_bmp);
 		bmp_Destroy(ui_main_bmp);
 		bmp_Destroy(ui_list_bmp);
@@ -295,13 +297,143 @@ int ui_DrawFilterPrePopup(state_t *state, int toggle){
 	return UI_OK;
 }
 
-int ui_DrawMultiChoiceFilterPopup(state_t *state, int toggle, int redraw){
-
+int ui_DrawMultiChoiceFilterPopup(state_t *state, int select, int redraw, int toggle){
+	// Draw a multi-choice filter window - more than one filter can be selected at the
+	// same time.
+	
+	int offset;
+	int min_selection;
+	int max_selection;
+	int i;
+	int page_i;
+	int status;
+	char msg[128]; // Title
+	
+	if (redraw == 0){
+		// Title for tech specs multi-choice filter
+		if (state->selected_filter == FILTER_TECH){
+			// Window title
+			sprintf(msg, "Select Tech Specs - Page %d/%d - Space to toggle, Enter to confirm", state->current_filter_page + 1, state->available_filter_pages);
+			gfx_Puts(60, 45, ui_font, msg);
+		}
+		// Any other multi-choice filter...
+		// ...
+	}
+	
+	// Move the selection through the on-screen choices
+	if (select == -1){
+		state->selected_filter_string--;
+	}
+	if (select == 1){
+		state->selected_filter_string++;
+	}
+		
+	// We only draw filter string choices from
+	// the currently selected page of filter strings,
+	// which is held in the state->current_filter_page variable.
+	offset = state->current_filter_page * MAXIMUM_FILTER_STRINGS_PER_PAGE;
+	min_selection = offset;
+	
+	// Are there more slots on this page than there are total strings?
+	if (min_selection + MAXIMUM_FILTER_STRINGS_PER_PAGE > state->available_filter_strings){
+		// Upper limit is the total number of strings
+		max_selection = state->available_filter_strings;
+	} else {
+		// Upper limit is the offset plus the total strings on this page
+		max_selection = 	offset + MAXIMUM_FILTER_STRINGS_PER_PAGE;
+	}
+	
+	// Dont allow cursor to go below first string on page
+	if (state->selected_filter_string < min_selection){
+		state->selected_filter_string = min_selection;
+	}
+	// Dont allow cursor to go above last string on page
+	if (state->selected_filter_string >= max_selection){
+		state->selected_filter_string = max_selection - 1;
+	}
+	
+	// Loop through and print the list of choices on this page, highlighting the currently
+	// selected choice.
+	for(i=offset; i<MAXIMUM_FILTER_STRINGS; i++){
+		
+		// We may (probably are) be starting part way
+		// into the list of filter strings if we are on page > 1.
+		page_i = i - offset;
+		
+		if ((state->filter_strings[i] != NULL) && (strcmp(state->filter_strings[i], "") != 0)){
+		
+			// Column 1
+			if (page_i < MAXIMUM_FILTER_STRINGS_PER_COL){
+				// Show the selection cursor
+				if (i == state->selected_filter_string){
+					gfx_Bitmap(45, 70 + (page_i * 25), ui_checkbox_choose_bmp);
+				} else {
+					if (state->filter_strings_selected[i] == 1){
+						// This is selected, show the checkbox
+						gfx_Bitmap(45, 70 + (page_i * 25), ui_checkbox_bmp);
+					} else {
+						// This is not selected
+						gfx_Bitmap(45, 70 + (page_i * 25), ui_checkbox_empty_bmp);
+					}
+				}
+				// Only print the text if we are painting an entirely new window
+				if (redraw == 0){
+					gfx_Puts(70, 70 + (page_i * 25), ui_font, state->filter_strings[i]);
+				}
+			}
+			
+			// Column 2
+			if ((page_i >= MAXIMUM_FILTER_STRINGS_PER_COL) && (page_i < (2 * MAXIMUM_FILTER_STRINGS_PER_COL))){
+				// Show the selection cursor
+				if (i == state->selected_filter_string){
+					gfx_Bitmap(230, 70 + ((page_i - 11) * 25), ui_checkbox_choose_bmp);
+				} else {
+					if (state->filter_strings_selected[i] == 1){
+						// This is selected
+						gfx_Bitmap(230, 70 + ((page_i - 11) * 25), ui_checkbox_bmp);
+					} else {
+						// This is not selected
+						gfx_Bitmap(230, 70 + ((page_i - 11) * 25), ui_checkbox_empty_bmp);
+					}
+				}
+				// Only print the text if we are painting an entirely new window
+				if (redraw == 0){
+					gfx_Puts(255, 70 + ((page_i - 11) * 25), ui_font, state->filter_strings[i]);
+				}
+			}
+			
+			// Column 3
+			if ((page_i >= (2 * MAXIMUM_FILTER_STRINGS_PER_COL)) && (page_i < MAXIMUM_FILTER_STRINGS_PER_PAGE)){
+				// Show the selection cursor
+				if (i == state->selected_filter_string){
+					gfx_Bitmap(420, 70 + ((page_i - 22) * 25), ui_checkbox_choose_bmp);
+				} else {
+					if (state->filter_strings_selected[i] == 1){
+						// This is selected
+						gfx_Bitmap(420, 70 + ((page_i - 22) * 25), ui_checkbox_bmp);
+					} else {
+						// This is not selected
+						gfx_Bitmap(420, 70 + ((page_i - 22) * 25), ui_checkbox_empty_bmp);
+					}
+				}
+				// Only print the text if we are painting an entirely new window
+				if (redraw == 0){
+					gfx_Puts(445, 70 + ((page_i - 22) * 25), ui_font, state->filter_strings[i]);
+				}
+			}	
+		}
+	}
+	
 	return UI_OK;
 }
 
-int ui_DrawFilterPopup(state_t *state, int toggle, int redraw){
+int ui_DrawFilterPopup(state_t *state, int select, int redraw, int toggle){
 	// Draw a page of filter choices for the user to select
+	// The 'redraw' parameter controls whether the text and background should be redrawn
+	// on this page... if just scrolling between choices, only the 
+	// checkbox bitmap is redrawn, all of the text and background can
+	// be left as-is, and hence speed up the interface redraw.
+	// The 'toggle' parameter controls whether we move the selection bitmap or not.
 	
 	int offset;
 	int min_selection;
@@ -310,11 +442,6 @@ int ui_DrawFilterPopup(state_t *state, int toggle, int redraw){
 	int page_i;
 	int status;
 	char msg[64]; // Title
-	
-	// redraw controls whether the text and background should be redrawn
-	// on this page... if just scrolling between choices, only the 
-	// checkbox bitmap is redrawn, all of the text and background can
-	// be left as-is, and hence speed up the interface redraw.
 	
 	// Draw drop-shadow
 	//gfx_BoxFillTranslucent(40, 50, GFX_COLS - 30, GFX_ROWS - 20, PALETTE_UI_DGREY);
@@ -334,34 +461,31 @@ int ui_DrawFilterPopup(state_t *state, int toggle, int redraw){
 	
 	if (state->selected_filter == FILTER_TECH){
 		// Tech specs filtering uses a multi-choice interface
-		// Window title
-		gfx_Puts(180, 45, ui_font, "Select Technical Specifications");
-		ui_DrawMultiChoiceFilterPopup(state, toggle, redraw);
+		ui_DrawMultiChoiceFilterPopup(state, select, redraw, toggle);
 	} else {
 		
 		// All other single-choice filters		
 		// Only print the Window title if we are painting an entirely new window
 		if (redraw == 0){
-			printf("title [%d]\n", state->selected_filter);
 			if (state->selected_filter == FILTER_GENRE){
-				sprintf(msg, "Select Genre - Page %d/%d", state->current_filter_page + 1, state->available_filter_pages);
-				gfx_Puts(240, 45, ui_font, msg);
+				sprintf(msg, "Select Genre - Page %d/%d - Enter to confirm", state->current_filter_page + 1, state->available_filter_pages);
+				gfx_Puts(160, 45, ui_font, msg);
 			}
 			if (state->selected_filter == FILTER_SERIES){
-				sprintf(msg, "Select Series - Page %d/%d", state->current_filter_page + 1, state->available_filter_pages);
-				gfx_Puts(240, 45, ui_font, msg);
+				sprintf(msg, "Select Series - Page %d/%d - Enter to confirm", state->current_filter_page + 1, state->available_filter_pages);
+				gfx_Puts(160, 45, ui_font, msg);
 			}
 			if (state->selected_filter == FILTER_COMPANY){
-				sprintf(msg, "Select Company - Page %d/%d", state->current_filter_page + 1, state->available_filter_pages);
-				gfx_Puts(240, 45, ui_font, msg);
+				sprintf(msg, "Select Company - Page %d/%d - Enter to confirm", state->current_filter_page + 1, state->available_filter_pages);
+				gfx_Puts(160, 45, ui_font, msg);
 			}
 		}
 		
 		// Move the selection through the on-screen choices
-		if (toggle == -1){
+		if (select == -1){
 			state->selected_filter_string--;
 		}
-		if (toggle == 1){
+		if (select == 1){
 			state->selected_filter_string++;
 		}
 			
@@ -387,6 +511,7 @@ int ui_DrawFilterPopup(state_t *state, int toggle, int redraw){
 		// Dont allow cursor to go above last string on page
 		if (state->selected_filter_string >= max_selection){
 			state->selected_filter_string = max_selection - 1;
+		}
 		
 		// Loop through and print the list of choices on this page, highlighting the currently
 		// selected choice.
@@ -445,7 +570,6 @@ int ui_DrawFilterPopup(state_t *state, int toggle, int redraw){
 			}
 		}
 	}
-	
 	return UI_OK;
 	
 }
@@ -680,6 +804,35 @@ int ui_LoadAssets(){
 	pal_BMP2Palette(ui_checkbox_bmp, 1);
 	if (status != 0){
 		ui_ProgressMessage("ERROR! Unable to read pixel data for checkbox icon");
+		fclose(ui_asset_reader);
+		return UI_ERR_BMP;
+	}
+	fclose(ui_asset_reader);
+	
+	// ==============================================
+	// Checkbox choose - small asset
+	// ==============================================
+	ui_ProgressMessage("Loading checkbox chooser...");
+	gfx_Flip();
+	if (BMP_VERBOSE){
+		printf("%s.%d\t ui_LoadAssets() Loading %s\n", __FILE__, __LINE__, ui_check_box_choose);
+	}
+	ui_asset_reader = fopen(ui_check_box_choose, "rb");
+	if (ui_asset_reader == NULL){
+		ui_ProgressMessage("ERROR! Unable to open checkbox chooser icon file");
+		return UI_ERR_FILE;     
+	}
+	ui_checkbox_choose_bmp = (bmpdata_t *) malloc(sizeof(bmpdata_t));
+	if (ui_checkbox_choose_bmp == NULL){
+		printf("%s.%d\t ui_LoadAssets() Unable to allocate memory for checkbox chooser icon.\n", __FILE__, __LINE__);
+		ui_ProgressMessage("ERROR! Unable to allocate memory of checkbox chooser icon");
+		return UI_ERR_BMP;
+	}
+	ui_checkbox_choose_bmp->pixels = NULL;
+	status = bmp_ReadImage(ui_asset_reader, ui_checkbox_choose_bmp, 1, 1, 1);
+	pal_BMP2Palette(ui_checkbox_choose_bmp, 1);
+	if (status != 0){
+		ui_ProgressMessage("ERROR! Unable to read pixel data for checkbox chooser icon");
 		fclose(ui_asset_reader);
 		return UI_ERR_BMP;
 	}

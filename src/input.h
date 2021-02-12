@@ -16,10 +16,12 @@
 */
 
 #define KB_DELAY					5		// delay in ms before reading keyboard state
+#define INPUT_VERBOSE			0
 
 // Input codes as returned to main()
 #define input_none				0x0000
 #define input_select				0x0D // Enter
+#define input_toggle				0x20 // Space
 #define input_cancel				0x1B // Escape
 #define input_switch				0x09 // Tab
 #define input_up					0x48

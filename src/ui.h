@@ -58,6 +58,7 @@
 #define ui_path_box				"assets\\light\\box_path.bmp"
 #define ui_company_box			"assets\\light\\box_comp.bmp"
 #define ui_check_box				"assets\\light\\cb_check.bmp"
+#define ui_check_box_choose		"assets\\light\\cb_choos.bmp"
 #define ui_check_box_unchecked	"assets\\light\\cb_empty.bmp"
 #define ui_select				"assets\\light\\select.bmp"
 
@@ -193,8 +194,8 @@ void	ui_Close();
 // These draw the basic UI elements
 int		ui_DrawInfoBox();
 int		ui_DrawConfirmPopup(state_t *state, gamedata_t *gamedata, launchdat_t *launchdat);
-int		ui_DrawFilterPrePopup(state_t *state, int toggle);
-int		ui_DrawFilterPopup(state_t *state, int toggle, int redraw);
+int		ui_DrawFilterPrePopup(state_t *state, int select);
+int		ui_DrawFilterPopup(state_t *state, int select, int redraw, int toggle);
 int		ui_DrawLaunchPopup(state_t *state, gamedata_t *gamedata, launchdat_t *launchdat, int toggle);
 int		ui_DrawMainWindow();
 int		ui_DrawSplash();
