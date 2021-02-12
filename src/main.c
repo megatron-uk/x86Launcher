@@ -83,6 +83,7 @@ int main() {
 	gamedata_t *gamedata = NULL;				// An initial gamedata record for the first game directory we read
 	gamedata_t *gamedata_head = NULL;		// Constant pointer to the start of the gamedata list
 	launchdat_t *launchdat = NULL;			// When a single game is selected, we attempt to load its metadata file from disk
+	launchdat_t *filterdat = NULL;			// Used when loading metadata files to filter games
 	imagefile_t *imagefile = NULL;			// When a single game is selected, we attempt to load a list of the screenshots from metadata
 	//imagefile_t *imagefile_head = NULL;		// Constant pointer to the start of the game screenshot list
 	gamedir_t *gamedir = NULL;				// List of the game search directories, as defined in our INIFILE
@@ -132,6 +133,7 @@ int main() {
 	
 	// Launchdat metadata structure
 	launchdat = (launchdat_t *) malloc(sizeof(launchdat_t));
+	filterdat = (launchdat_t *) malloc(sizeof(launchdat_t));
 	
 	/* ************************************** */
 	/* Create an instance of the UI state data */
@@ -763,19 +765,19 @@ int main() {
 						
 						// Generate the list of keywords
 						if (state->selected_filter == FILTER_GENRE){
-							filter_GetGenres(state, gamedata);
+							filter_GetGenres(state, gamedata, filterdat);
 						}
 						
 						if (state->selected_filter == FILTER_SERIES){
-							filter_GetSeries(state, gamedata);
+							filter_GetSeries(state, gamedata, filterdat);
 						}
 						
 						if (state->selected_filter == FILTER_COMPANY){
-							filter_GetCompany(state, gamedata);
+							filter_GetCompany(state, gamedata, filterdat);
 						}
 						
 						// Bring up the filter keyword selection pane
-						ui_DrawFilterPopup(state, 0);
+						ui_DrawFilterPopup(state, 0, 0);
 						gfx_Flip();
 						user_input = input_get();
 					}
@@ -827,16 +829,46 @@ int main() {
 					break;
 				case(input_scroll_up):
 					// Page up key - move to next PAGE of filter keywords
+					if (state->current_filter_page > 0){
+						if (config->verbose){
+							printf("%s.%d\t Toggle filter page up\n", __FILE__, __LINE__);	
+						}
+						// Decrement page number
+						state->current_filter_page--;
+						// Highlight first option on the new page
+						state->selected_filter_string = state->current_filter_page * MAXIMUM_FILTER_STRINGS_PER_PAGE;
+						ui_DrawFilterPopup(state, 0, 0);
+						gfx_Flip();
+					} else {
+						if (config->verbose){
+							printf("%s.%d\t Toggle filter page up - reached start!\n", __FILE__, __LINE__);	
+						}						
+					}
 					break;
 				case(input_scroll_down):
 					// Page down key - move to previous PAGE of filter keywords
+					if (state->current_filter_page < (state->available_filter_pages - 1)){
+						if (config->verbose){
+							printf("%s.%d\t Toggle filter page down\n", __FILE__, __LINE__);	
+						}
+						// Bump the page number
+						state->current_filter_page++;
+						// Highlight first option on the new page
+						state->selected_filter_string = state->current_filter_page * MAXIMUM_FILTER_STRINGS_PER_PAGE;
+						ui_DrawFilterPopup(state, 0, 0);
+						gfx_Flip();
+					} else {
+						if (config->verbose){
+							printf("%s.%d\t Toggle filter page down - reached end!\n", __FILE__, __LINE__);	
+						}
+					}
 					break;	
 				case(input_up):
 					// Cursor key up - move to next filter keyword up
 					if (config->verbose){
 						printf("%s.%d\t Toggle filter selection up\n", __FILE__, __LINE__);	
 					}
-					ui_DrawFilterPopup(state, -1);
+					ui_DrawFilterPopup(state, -1, 1);
 					gfx_Flip();
 					break;
 				case(input_down):
@@ -844,23 +876,23 @@ int main() {
 					if (config->verbose){
 						printf("%s.%d\t Toggle filter selection down\n", __FILE__, __LINE__);	
 					}
-					ui_DrawFilterPopup(state, 1);
+					ui_DrawFilterPopup(state, 1, 1);
 					gfx_Flip();
 					break;
 				case(input_select):
 					if (state->selected_filter == FILTER_GENRE){
 						// Now apply the chosen filter
-						status = filter_Genre(state, gamedata);
+						status = filter_Genre(state, gamedata, filterdat);
 					}
 					
 					if (state->selected_filter == FILTER_SERIES){
 						// Now apply the chosen filter
-						status = filter_Series(state, gamedata);
+						status = filter_Series(state, gamedata, filterdat);
 					}
 					
 					if (state->selected_filter == FILTER_COMPANY){
 						// Now apply the chosen filter
-						status = filter_Company(state, gamedata);
+						status = filter_Company(state, gamedata, filterdat);
 					}
 					
 					//if (state->selected_filter == FILTER_TECH){
@@ -1089,17 +1121,6 @@ int main() {
 				case(input_left):
 					// Cycle left through artwork
 					start_time = clock();
-					/*
-					if (imagefile != NULL){
-						if (imagefile->prev != NULL){
-							imagefile = imagefile->prev;
-						} else {
-							imagefile = imagefile_head;
-						}
-						ui_DisplayArtwork(screenshot_file, screenshot_bmp, screenshot_bmp_state, state, imagefile);
-						gfx_Flip();
-					}
-					*/
 					if (imagefile->last > -1){
 						if (imagefile->selected > 0){
 							imagefile->selected -= 1;
@@ -1115,16 +1136,6 @@ int main() {
 				case(input_right):
 					// Scroll right through artwork - if available
 					start_time = clock();
-					/*if (imagefile != NULL){
-						if (imagefile->next != NULL){
-							imagefile = imagefile->next;
-						} else {
-							imagefile = imagefile_head;
-						}
-						ui_DisplayArtwork(screenshot_file, screenshot_bmp, screenshot_bmp_state, state, imagefile);
-						gfx_Flip();
-					}
-					*/
 					if (imagefile->last != NULL){
 						if (imagefile->selected < imagefile->last){
 							imagefile->selected += 1;
@@ -1173,17 +1184,6 @@ int main() {
 					t2 = clock();
 					timers_Print(t1, t2, "- Clear artwork window", config->timers);
 					
-					// ======================
-					// Destroy previous launch.dat
-					// ======================
-					//if (state->has_launchdat){
-					//	if (launchdat != NULL){
-					//		if (config->verbose){
-					//			printf("%s.%d\t Previous entry had metadata, freeing memory\n", __FILE__, __LINE__);
-					//		}
-					//		free(launchdat);
-					//	}
-					//}
 					state->has_launchdat = 0;
 					
 					// ======================
@@ -1211,7 +1211,6 @@ int main() {
 								printf("%s.%d\t Allocating memory and loading metadata for [%s]\n", __FILE__, __LINE__, state->selected_game->name);
 							}
 							t1 = clock();
-							//launchdat = (launchdat_t *) malloc(sizeof(launchdat_t));	
 							status = getLaunchdata(state->selected_game, launchdat);
 							if (status != 0){
 								if (config->verbose){
@@ -1234,10 +1233,6 @@ int main() {
 							if (config->verbose){
 								printf("%s.%d\t Building image list\n", __FILE__, __LINE__);
 							}
-							
-							//imagefile = (imagefile_t *) malloc(sizeof(imagefile_t));
-							//imagefile->next = NULL;
-							//imagefile_head = imagefile;
 							
 							status = getImageList(launchdat, imagefile);
 							if (status > 0){

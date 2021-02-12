@@ -30,10 +30,10 @@
 #define FILTER_ERR		-1		// Failure returncode
 
 // Function prototypes
-int filter_GetGenres(state_t *state, gamedata_t *gamedata);
-int filter_GetSeries(state_t *state, gamedata_t *gamedata);
-int filter_GetCompany(state_t *state, gamedata_t *gamedata);
+int filter_GetGenres(state_t *state, gamedata_t *gamedata, launchdat_t *filterdat);
+int filter_GetSeries(state_t *state, gamedata_t *gamedata, launchdat_t *filterdat);
+int filter_GetCompany(state_t *state, gamedata_t *gamedata, launchdat_t *filterdat);
 int filter_None(state_t *state, gamedata_t *gamedata);
-int filter_Genre(state_t *state, gamedata_t *gamedata);
-int filter_Series(state_t *state, gamedata_t *gamedata);
-int filter_Company(state_t *state, gamedata_t *gamedata);
+int filter_Genre(state_t *state, gamedata_t *gamedata, launchdat_t *filterdat);
+int filter_Series(state_t *state, gamedata_t *gamedata, launchdat_t *filterdat);
+int filter_Company(state_t *state, gamedata_t *gamedata, launchdat_t *filterdat);

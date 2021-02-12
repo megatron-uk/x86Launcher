@@ -25,7 +25,7 @@
 #endif
 
 // Enable/disable logging for the ui.c functions
-#define UI_VERBOSE				1
+#define UI_VERBOSE				0
 
 #define splash_logo				"assets\\logo.bmp"
 #define splash_progress_x_pos	100
@@ -194,7 +194,7 @@ void	ui_Close();
 int		ui_DrawInfoBox();
 int		ui_DrawConfirmPopup(state_t *state, gamedata_t *gamedata, launchdat_t *launchdat);
 int		ui_DrawFilterPrePopup(state_t *state, int toggle);
-int		ui_DrawFilterPopup(state_t *state, int toggle);
+int		ui_DrawFilterPopup(state_t *state, int toggle, int redraw);
 int		ui_DrawLaunchPopup(state_t *state, gamedata_t *gamedata, launchdat_t *launchdat, int toggle);
 int		ui_DrawMainWindow();
 int		ui_DrawSplash();

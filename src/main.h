@@ -30,30 +30,34 @@
 
 #define MAXIMUM_FILTER_STRINGS 200
 #define MAXIMUM_SELECTED_STRINGS 30
+#define MAXIMUM_FILTER_STRINGS_PER_PAGE 33
+#define MAXIMUM_FILTER_STRINGS_PER_COL 11
 
 typedef struct state {
 	unsigned int selected_list[SELECTION_LIST_SIZE];		// A list of game ID's which are currently selected
 	unsigned int selected_max;			// Number of items in the current selected list
-	unsigned int selected_page;			// Page 'N' of the selected list
-	unsigned int selected_line;			// The line in the page indicating the selected game
-	unsigned int total_pages;			// Total number of pages in the selected_list
-	unsigned int active_pane;			// The pane which currently has focus
-	unsigned int selected_start;			// Which start file to launch, 0==start, 1==alt_start
-	unsigned int selected_filter;		// Which filter to use, 0==none, 1==genre, 2==series
-	unsigned int selected_filter_string;	// Which filter string is selected
+	unsigned char selected_page;			// Page 'N' of the selected list
+	unsigned char selected_line;			// The line in the page indicating the selected game
+	unsigned char total_pages;			// Total number of pages in the selected_list
+	unsigned char active_pane;			// The pane which currently has focus
+	unsigned char selected_start;		// Which start file to launch, 0==start, 1==alt_start
+	
+	unsigned char selected_filter;		// Which filter to use, 0==none, 1==genre, 2==series
+	unsigned char selected_filter_string;	// Which filter string is selected for non=multichoice filters
+	
 	unsigned int available_filter_strings; // How many filter strings are currently available
-	unsigned int available_filter_pages;	// How many pages of filter strings are available
-	unsigned int current_filter_page;	// Which page of filter strings is currently selected
+	unsigned char available_filter_pages;	// How many pages of filter strings are available
+	unsigned char current_filter_page;	// Which page of filter strings is currently selected
 	
 	// Info about selected item
 	int selected_gameid;					// Currently selected gameid
 	gamedata_t *selected_game;			// Currently selected gamedata item
-	int has_launchdat;					// Current game has metadata
-	int has_images;						// Current game has artwork
+	unsigned char has_launchdat;			// Current game has metadata
+	unsigned char has_images;			// Current game has artwork
 	char selected_image[65];				// path + filename of current artwork
 	
 	// Filter list
 	char filter_strings[MAXIMUM_FILTER_STRINGS][MAX_STRING_SIZE];
-	char filter_strings_selected[MAXIMUM_FILTER_STRINGS][MAXIMUM_SELECTED_STRINGS];
+	unsigned char filter_strings_selected[MAXIMUM_FILTER_STRINGS]; // 1 or 0 to indicate if the string at this position is selected
 	
 } state_t;

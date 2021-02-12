@@ -18,10 +18,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #ifndef __HAS_DATA
 #include "data.h"
 #define __HAS_DATA
+#endif
+#ifndef __HAS_MAIN
+#include "main.h"
+#define __HAS_MAIN
 #endif
 #include "filter.h"
 #include "ui.h"
@@ -39,7 +44,7 @@ int sortFilterKeys(state_t *state, int items){
 	return FILTER_OK;
 }
 
-int filter_GetGenres(state_t *state, gamedata_t *gamedata){
+int filter_GetGenres(state_t *state, gamedata_t *gamedata, launchdat_t *filterdat){
 	// Get all of the genres set in game metadata
 	
 	int i;
@@ -49,9 +54,6 @@ int filter_GetGenres(state_t *state, gamedata_t *gamedata){
 	int status;
 	int next_pos;
 	gamedata_t *gamedata_head;
-	launchdat_t *launchdat;
-	
-	launchdat = (launchdat_t *) malloc(sizeof(launchdat_t));
 	gamedata_head = gamedata; // Store first item
 	
 	if (FILTER_VERBOSE){
@@ -74,25 +76,25 @@ int filter_GetGenres(state_t *state, gamedata_t *gamedata){
 		if (gamedata->has_dat){
 			
 			// Load launch metadata
-			status = getLaunchdata(gamedata, launchdat);
+			status = getLaunchdata(gamedata, filterdat);
 			if (status == 0){
 				
 				// Does the genre field match?
-				if (strcmp(launchdat->genre, "") != 0){
+				if (strcmp(filterdat->genre, "") != 0){
 				
 					// Does this genre already exist?
 					found = 0;
 					for(a=0;a<MAXIMUM_FILTER_STRINGS;a++){
-						if (strcmp(state->filter_strings[a], launchdat->genre) == 0){
+						if (strcmp(state->filter_strings[a], filterdat->genre) == 0){
 							found = 1;
 						}
 					}
 					// This genre isn't found yet, add it to the list of keywords
 					if (found == 0){
 						if (FILTER_VERBOSE){
-							printf("%s.%d\t Info - Found genre: [%s]\n", __FILE__, __LINE__, launchdat->genre);
+							printf("%s.%d\t Info - Found genre: [%s]\n", __FILE__, __LINE__, filterdat->genre);
 						}
-						strncpy(state->filter_strings[next_pos], launchdat->genre, MAX_STRING_SIZE);
+						strncpy(state->filter_strings[next_pos], filterdat->genre, MAX_STRING_SIZE);
 						next_pos++;
 					}
 				}
@@ -111,17 +113,23 @@ int filter_GetGenres(state_t *state, gamedata_t *gamedata){
 			printf("%s.%d\t Info - Keyword %d: [%s]\n", __FILE__, __LINE__, a, state->filter_strings[a]);
 		}
 	}
+	
 	state->available_filter_strings = next_pos;
+	state->current_filter_page = 0;
+	state->available_filter_pages = ceil(((float)next_pos / (float)MAXIMUM_FILTER_STRINGS_PER_PAGE));
+	for(i = 0; i < MAXIMUM_FILTER_STRINGS; i++){
+		state->filter_strings_selected[i] = 0;
+	}
 	
 	if (FILTER_VERBOSE){
 		printf("%s.%d\t Searched %d games\n", __FILE__, __LINE__, c);
 		printf("%s.%d\t Total of %d genre filters added\n", __FILE__, __LINE__, next_pos);
+		printf("%s.%d\t Total of %d pages of filters\n", __FILE__, __LINE__, state->available_filter_pages);
 	} 
-	free(launchdat);
 	return FILTER_OK;
 }
 
-int filter_GetSeries(state_t *state, gamedata_t *gamedata){
+int filter_GetSeries(state_t *state, gamedata_t *gamedata, launchdat_t *filterdat){
 	// Get all of the series names set in game metadata
 	
 	int i;
@@ -131,9 +139,6 @@ int filter_GetSeries(state_t *state, gamedata_t *gamedata){
 	int status;
 	int next_pos;
 	gamedata_t *gamedata_head;
-	launchdat_t *launchdat;
-	
-	launchdat = (launchdat_t *) malloc(sizeof(launchdat_t));
 	gamedata_head = gamedata; // Store first item
 	
 	if (FILTER_VERBOSE){
@@ -156,25 +161,25 @@ int filter_GetSeries(state_t *state, gamedata_t *gamedata){
 		if (gamedata->has_dat){
 			
 			// Load launch metadata
-			status = getLaunchdata(gamedata, launchdat);
+			status = getLaunchdata(gamedata, filterdat);
 			if (status == 0){
 				
 				// Does the genre field match?
-				if (strcmp(launchdat->series, "") != 0){
+				if (strcmp(filterdat->series, "") != 0){
 				
 					// Does this genre already exist?
 					found = 0;
 					for(a=0;a<MAXIMUM_FILTER_STRINGS;a++){
-						if (strcmp(state->filter_strings[a], launchdat->series) == 0){
+						if (strcmp(state->filter_strings[a], filterdat->series) == 0){
 							found = 1;
 						}
 					}
 					// This genre isn't found yet, add it to the list of keywords
 					if (found == 0){
 						if (FILTER_VERBOSE){
-							printf("%s.%d\t Info - Found series: [%s]\n", __FILE__, __LINE__, launchdat->series);
+							printf("%s.%d\t Info - Found series: [%s]\n", __FILE__, __LINE__, filterdat->series);
 						}
-						strncpy(state->filter_strings[next_pos], launchdat->series, MAX_STRING_SIZE);
+						strncpy(state->filter_strings[next_pos], filterdat->series, MAX_STRING_SIZE);
 						next_pos++;
 					}
 				}
@@ -194,16 +199,21 @@ int filter_GetSeries(state_t *state, gamedata_t *gamedata){
 		}
 	}
 	state->available_filter_strings = next_pos;
+	state->current_filter_page = 0;
+	state->available_filter_pages = ceil(((float)next_pos / (float)MAXIMUM_FILTER_STRINGS_PER_PAGE));
+	for(i = 0; i < MAXIMUM_FILTER_STRINGS; i++){
+		state->filter_strings_selected[i] = 0;
+	}
 	
 	if (FILTER_VERBOSE){
 		printf("%s.%d\t Searched %d games\n", __FILE__, __LINE__, c);
 		printf("%s.%d\t Total of %d series filters added\n", __FILE__, __LINE__, next_pos);
-	} 
-	free(launchdat);
+		printf("%s.%d\t Total of %d pages of filters\n", __FILE__, __LINE__, state->available_filter_pages);
+	}
 	return FILTER_OK;
 }
 
-int filter_GetCompany(state_t *state, gamedata_t *gamedata){
+int filter_GetCompany(state_t *state, gamedata_t *gamedata, launchdat_t *filterdat){
 	// Get all of the companies set in game metadata
 	
 	int i;
@@ -214,9 +224,6 @@ int filter_GetCompany(state_t *state, gamedata_t *gamedata){
 	int status;
 	int next_pos;
 	gamedata_t *gamedata_head;
-	launchdat_t *launchdat;
-	
-	launchdat = (launchdat_t *) malloc(sizeof(launchdat_t));
 	gamedata_head = gamedata; // Store first item
 	
 	if (FILTER_VERBOSE){
@@ -239,36 +246,36 @@ int filter_GetCompany(state_t *state, gamedata_t *gamedata){
 		if (gamedata->has_dat){
 			
 			// Load launch metadata
-			status = getLaunchdata(gamedata, launchdat);
+			status = getLaunchdata(gamedata, filterdat);
 			if (status == 0){
 				
 				// Does the developer or publisher field match?
-				if ((strcmp(launchdat->developer, "") != 0) || (strcmp(launchdat->publisher, "") != 0)){
+				if ((strcmp(filterdat->developer, "") != 0) || (strcmp(filterdat->publisher, "") != 0)){
 				
 					// Does this company already exist?
 					found_pub = 0;
 					found_dev = 0;
 					for(a=0;a<MAXIMUM_FILTER_STRINGS;a++){
-						if (strcmp(state->filter_strings[a], launchdat->developer) == 0){
+						if (strcmp(state->filter_strings[a], filterdat->developer) == 0){
 							found_dev = 1;
 						}
-						if (strcmp(state->filter_strings[a], launchdat->publisher) == 0){
+						if (strcmp(state->filter_strings[a], filterdat->publisher) == 0){
 							found_pub = 1;
 						}
 					}
 					// This company isn't found yet, add it to the list of keywords
 					if (found_dev == 0){
 						if (FILTER_VERBOSE){
-							printf("%s.%d\t Info - Found developer: [%s]\n", __FILE__, __LINE__, launchdat->developer);
+							printf("%s.%d\t Info - Found developer: [%s]\n", __FILE__, __LINE__, filterdat->developer);
 						}
-						strncpy(state->filter_strings[next_pos], launchdat->developer, MAX_STRING_SIZE);
+						strncpy(state->filter_strings[next_pos], filterdat->developer, MAX_STRING_SIZE);
 						next_pos++;
 					}
 					if (found_pub == 0){
 						if (FILTER_VERBOSE){
-							printf("%s.%d\t Info - Found publisher: [%s]\n", __FILE__, __LINE__, launchdat->publisher);
+							printf("%s.%d\t Info - Found publisher: [%s]\n", __FILE__, __LINE__, filterdat->publisher);
 						}
-						strncpy(state->filter_strings[next_pos], launchdat->publisher, MAX_STRING_SIZE);
+						strncpy(state->filter_strings[next_pos], filterdat->publisher, MAX_STRING_SIZE);
 						next_pos++;
 					}
 				}
@@ -288,12 +295,17 @@ int filter_GetCompany(state_t *state, gamedata_t *gamedata){
 		}
 	}
 	state->available_filter_strings = next_pos;
+	state->current_filter_page = 0;
+	state->available_filter_pages = ceil(((float)next_pos / (float)MAXIMUM_FILTER_STRINGS_PER_PAGE));
+	for(i = 0; i < MAXIMUM_FILTER_STRINGS; i++){
+		state->filter_strings_selected[i] = 0;
+	}
 	
 	if (FILTER_VERBOSE){
 		printf("%s.%d\t Searched %d games\n", __FILE__, __LINE__, c);
 		printf("%s.%d\t Total of %d company filters added\n", __FILE__, __LINE__, next_pos);
+		printf("%s.%d\t Total of %d pages of filters\n", __FILE__, __LINE__, state->available_filter_pages);
 	} 
-	free(launchdat);
 	return FILTER_OK;
 }
 
@@ -341,6 +353,8 @@ int filter_None(state_t *state, gamedata_t *gamedata){
 	state->selected_line = 0;	// Start on line 0
 	state->total_pages = 0;	
 	state->selected_filter_string = 0;
+	state->current_filter_page = 0;
+	state->available_filter_pages = 0;
 	state->selected_gameid = state->selected_list[0]; 	// Initial game is the 0th element of the selection list
 	state->selected_game = getGameid(state->selected_gameid, gamedata);
 	for(i = 0; i <= state->selected_max ; i++){
@@ -348,22 +362,22 @@ int filter_None(state_t *state, gamedata_t *gamedata){
 			state->total_pages++;
 		}
 	}
+	for(i = 0; i < MAXIMUM_FILTER_STRINGS; i++){
+		state->filter_strings_selected[i] = 0;
+	}
 	
 	return FILTER_OK;
 }
 
-int filter_Genre(state_t *state, gamedata_t *gamedata){
+int filter_Genre(state_t *state, gamedata_t *gamedata, launchdat_t *filterdat){
 	// Filter all games on a specific genre string
 	int i;
 	int c;
 	int status;
 	gamedata_t *gamedata_head;
-	launchdat_t *launchdat;
 	char filter[MAX_STRING_SIZE];
 	
 	strncpy(filter, state->filter_strings[state->selected_filter_string], MAX_STRING_SIZE);
-	
-	launchdat = (launchdat_t *) malloc(sizeof(launchdat_t));
 	
 	gamedata_head = gamedata; // Store first item
 	
@@ -400,15 +414,15 @@ int filter_Genre(state_t *state, gamedata_t *gamedata){
 		if (gamedata->has_dat){
 			
 			// Load launch metadata
-			status = getLaunchdata(gamedata, launchdat);
+			status = getLaunchdata(gamedata, filterdat);
 			if (status == 0){
 				
 				if (FILTER_VERBOSE){
-					printf("%s.%d\t Info - Checking %s == %s\n", __FILE__, __LINE__, launchdat->genre, filter);
+					printf("%s.%d\t Info - Checking %s == %s\n", __FILE__, __LINE__, filterdat->genre, filter);
 				}
 				
 				// Does the genre field match?
-				if (strncmp(launchdat->genre, filter, MAX_STRING_SIZE) == 0){
+				if (strncmp(filterdat->genre, filter, MAX_STRING_SIZE) == 0){
 				
 					if (FILTER_VERBOSE){
 						printf("%s.%d\t Info - adding Game ID: [%d], %s\n", __FILE__, __LINE__, gamedata->gameid, gamedata->name);
@@ -445,19 +459,16 @@ int filter_Genre(state_t *state, gamedata_t *gamedata){
 			state->total_pages++;
 		}
 	}
-	free(launchdat);
 	return FILTER_OK;
 }
 
-int filter_Series(state_t *state, gamedata_t *gamedata){
+int filter_Series(state_t *state, gamedata_t *gamedata, launchdat_t *filterdat){
 	// Filter all games on a specific series string
 	int i;
 	int c;
 	int status;
 	gamedata_t *gamedata_head;
-	launchdat_t *launchdat;
 	char filter[MAX_STRING_SIZE];
-	launchdat = (launchdat_t *) malloc(sizeof(launchdat_t));
 	gamedata_head = gamedata; // Store first item
 	
 	strncpy(filter, state->filter_strings[state->selected_filter_string], MAX_STRING_SIZE);
@@ -495,15 +506,15 @@ int filter_Series(state_t *state, gamedata_t *gamedata){
 		if (gamedata->has_dat){
 			
 			// Load launch metadata
-			status = getLaunchdata(gamedata, launchdat);
+			status = getLaunchdata(gamedata, filterdat);
 			if (status == 0){
 				
 				if (FILTER_VERBOSE){
-					printf("%s.%d\t Info - Checking %s == %s\n", __FILE__, __LINE__, launchdat->series, filter);
+					printf("%s.%d\t Info - Checking %s == %s\n", __FILE__, __LINE__, filterdat->series, filter);
 				}
 				
 				// Does the genre field match?
-				if (strncmp(launchdat->series, filter, MAX_STRING_SIZE) == 0){
+				if (strncmp(filterdat->series, filter, MAX_STRING_SIZE) == 0){
 				
 					if (FILTER_VERBOSE){
 						printf("%s.%d\t Info - adding Game ID: [%d], %s\n", __FILE__, __LINE__, gamedata->gameid, gamedata->name);
@@ -540,22 +551,18 @@ int filter_Series(state_t *state, gamedata_t *gamedata){
 			state->total_pages++;
 		}
 	}
-	free(launchdat);
 	return FILTER_OK;
 }
 
-int filter_Company(state_t *state, gamedata_t *gamedata){
+int filter_Company(state_t *state, gamedata_t *gamedata, launchdat_t *filterdat){
 	// Filter all games on a specific developer or publisher string
 	int i;
 	int c;
 	int status;
 	gamedata_t *gamedata_head;
-	launchdat_t *launchdat;
 	char filter[MAX_STRING_SIZE];
 	
 	strncpy(filter, state->filter_strings[state->selected_filter_string], MAX_STRING_SIZE);
-	
-	launchdat = (launchdat_t *) malloc(sizeof(launchdat_t));
 	
 	gamedata_head = gamedata; // Store first item
 	
@@ -592,15 +599,15 @@ int filter_Company(state_t *state, gamedata_t *gamedata){
 		if (gamedata->has_dat){
 			
 			// Load launch metadata
-			status = getLaunchdata(gamedata, launchdat);
+			status = getLaunchdata(gamedata, filterdat);
 			if (status == 0){
 				
 				if (FILTER_VERBOSE){
-					printf("%s.%d\t Info - Checking %s OR %s == %s\n", __FILE__, __LINE__, launchdat->developer, launchdat->publisher, filter);
+					printf("%s.%d\t Info - Checking %s OR %s == %s\n", __FILE__, __LINE__, filterdat->developer, filterdat->publisher, filter);
 				}
 				
 				// Does the publisher or developer field match?
-				if ((strncmp(launchdat->developer, filter, MAX_STRING_SIZE) == 0) || (strncmp(launchdat->publisher, filter, MAX_STRING_SIZE) == 0)){
+				if ((strncmp(filterdat->developer, filter, MAX_STRING_SIZE) == 0) || (strncmp(filterdat->publisher, filter, MAX_STRING_SIZE) == 0)){
 				
 					if (FILTER_VERBOSE){
 						printf("%s.%d\t Yes - adding Game ID: [%d], %s\n", __FILE__, __LINE__, gamedata->gameid, gamedata->name);
@@ -637,6 +644,5 @@ int filter_Company(state_t *state, gamedata_t *gamedata){
 			state->total_pages++;
 		}
 	}
-	free(launchdat);
 	return FILTER_OK;
 }

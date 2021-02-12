@@ -295,89 +295,152 @@ int ui_DrawFilterPrePopup(state_t *state, int toggle){
 	return UI_OK;
 }
 
-int ui_DrawMultiChoiceFilterPopup(state_t *state, int toggle){
+int ui_DrawMultiChoiceFilterPopup(state_t *state, int toggle, int redraw){
 
 	return UI_OK;
 }
 
-int ui_DrawFilterPopup(state_t *state, int toggle){
+int ui_DrawFilterPopup(state_t *state, int toggle, int redraw){
 	// Draw a page of filter choices for the user to select
 	
+	int offset;
+	int min_selection;
+	int max_selection;
 	int i;
+	int page_i;
 	int status;
+	char msg[64]; // Title
+	
+	// redraw controls whether the text and background should be redrawn
+	// on this page... if just scrolling between choices, only the 
+	// checkbox bitmap is redrawn, all of the text and background can
+	// be left as-is, and hence speed up the interface redraw.
 	
 	// Draw drop-shadow
 	//gfx_BoxFillTranslucent(40, 50, GFX_COLS - 30, GFX_ROWS - 20, PALETTE_UI_DGREY);
 	
-	// Draw main box
-	gfx_BoxFill(30, 40, GFX_COLS - 40, GFX_ROWS - 40, PALETTE_UI_BLACK);
+	// The minimum and maximum index of the filter strings we can select
+	min_selection = 0;
+	max_selection = 0;
 	
-	// Draw main box outline
-	gfx_Box(30, 40, GFX_COLS - 40, GFX_ROWS - 40, PALETTE_UI_LGREY);
+	if (redraw == 0){
+		// Only paint the selection window if this is an entirely new window or new page of filters
+		// Draw main box
+		gfx_BoxFill(30, 40, GFX_COLS - 40, GFX_ROWS - 40, PALETTE_UI_BLACK);
+		// Draw main box outline
+		gfx_Box(30, 40, GFX_COLS - 40, GFX_ROWS - 40, PALETTE_UI_LGREY);
+	}
+	
 	
 	if (state->selected_filter == FILTER_TECH){
-		// Do a more fancy multi-choice selection
+		// Tech specs filtering uses a multi-choice interface
+		// Window title
 		gfx_Puts(180, 45, ui_font, "Select Technical Specifications");
-		ui_DrawMultiChoiceFilterPopup(state, toggle);
+		ui_DrawMultiChoiceFilterPopup(state, toggle, redraw);
 	} else {
-	
-		// Box title
-		if (state->selected_filter == FILTER_GENRE){
-			gfx_Puts(240, 45, ui_font, "Select Genre");
-		}
-		if (state->selected_filter == FILTER_SERIES){
-			gfx_Puts(240, 45, ui_font, "Select Series");
-		}
-		if (state->selected_filter == FILTER_COMPANY){
-			gfx_Puts(240, 45, ui_font, "Select Company");
+		
+		// All other single-choice filters		
+		// Only print the Window title if we are painting an entirely new window
+		if (redraw == 0){
+			printf("title [%d]\n", state->selected_filter);
+			if (state->selected_filter == FILTER_GENRE){
+				sprintf(msg, "Select Genre - Page %d/%d", state->current_filter_page + 1, state->available_filter_pages);
+				gfx_Puts(240, 45, ui_font, msg);
+			}
+			if (state->selected_filter == FILTER_SERIES){
+				sprintf(msg, "Select Series - Page %d/%d", state->current_filter_page + 1, state->available_filter_pages);
+				gfx_Puts(240, 45, ui_font, msg);
+			}
+			if (state->selected_filter == FILTER_COMPANY){
+				sprintf(msg, "Select Company - Page %d/%d", state->current_filter_page + 1, state->available_filter_pages);
+				gfx_Puts(240, 45, ui_font, msg);
+			}
 		}
 		
+		// Move the selection through the on-screen choices
 		if (toggle == -1){
 			state->selected_filter_string--;
 		}
 		if (toggle == 1){
 			state->selected_filter_string++;
 		}
+			
+		// We only draw filter string choices from
+		// the currently selected page of filter strings,
+		// which is held in the state->current_filter_page variable.
+		offset = state->current_filter_page * MAXIMUM_FILTER_STRINGS_PER_PAGE;
+		min_selection = offset;
 		
-		if (state->selected_filter_string < 1){
-			state->selected_filter_string = FILTER_NONE;
+		// Are there more slots on this page than there are total strings?
+		if (min_selection + MAXIMUM_FILTER_STRINGS_PER_PAGE > state->available_filter_strings){
+			// Upper limit is the total number of strings
+			max_selection = state->available_filter_strings;
+		} else {
+			// Upper limit is the offset plus the total strings on this page
+			max_selection = 	offset + MAXIMUM_FILTER_STRINGS_PER_PAGE;
 		}
-		if (state->selected_filter_string > state->available_filter_strings){
-			state->selected_filter_string = state->available_filter_strings;
+		 
+		// Dont allow cursor to go below first string on page
+		if (state->selected_filter_string < min_selection){
+			state->selected_filter_string = min_selection;
 		}
+		// Dont allow cursor to go above last string on page
+		if (state->selected_filter_string >= max_selection){
+			state->selected_filter_string = max_selection - 1;
 		
-		for(i=0; i<MAXIMUM_FILTER_STRINGS; i++){
+		// Loop through and print the list of choices on this page, highlighting the currently
+		// selected choice.
+		for(i=offset; i<MAXIMUM_FILTER_STRINGS; i++){
+			
+			// We may (probably are) be starting part way
+			// into the list of filter strings if we are on page > 1.
+			page_i = i - offset;
 			
 			if ((state->filter_strings[i] != NULL) && (strcmp(state->filter_strings[i], "") != 0)){
 			
 				// Column 1
-				if (i < 11){
+				if (page_i < MAXIMUM_FILTER_STRINGS_PER_COL){
 					if (i == state->selected_filter_string){
-						gfx_Bitmap(45, 70 + (i * 25), ui_checkbox_bmp);
+						// This is selected
+						gfx_Bitmap(45, 70 + (page_i * 25), ui_checkbox_bmp);
 					} else {
-						gfx_Bitmap(45, 70 + (i * 25), ui_checkbox_empty_bmp);
+						// This is not selected
+						gfx_Bitmap(45, 70 + (page_i * 25), ui_checkbox_empty_bmp);
 					}
-					gfx_Puts(70, 70 + (i * 25), ui_font, state->filter_strings[i]);
+					// Only print the text if we are painting an entirely new window
+					if (redraw == 0){
+						gfx_Puts(70, 70 + (page_i * 25), ui_font, state->filter_strings[i]);
+					}
 				}
 				
 				// Column 2
-				if ((i >= 11) && (i < 22)){
+				if ((page_i >= MAXIMUM_FILTER_STRINGS_PER_COL) && (page_i < (2 * MAXIMUM_FILTER_STRINGS_PER_COL))){
 					if (i == state->selected_filter_string){
-						gfx_Bitmap(230, 70 + ((i - 11) * 25), ui_checkbox_bmp);
+						// This is selected
+						gfx_Bitmap(230, 70 + ((page_i - 11) * 25), ui_checkbox_bmp);
 					} else {
-						gfx_Bitmap(230, 70 + ((i - 11) * 25), ui_checkbox_empty_bmp);
+						// This is not selected
+						gfx_Bitmap(230, 70 + ((page_i - 11) * 25), ui_checkbox_empty_bmp);
 					}
-					gfx_Puts(255, 70 + ((i - 11) * 25), ui_font, state->filter_strings[i]);
+					// Only print the text if we are painting an entirely new window
+					if (redraw == 0){
+						gfx_Puts(255, 70 + ((page_i - 11) * 25), ui_font, state->filter_strings[i]);
+					}
 				}
 				
 				// Column 3
-				if (i >= 22){
+				if ((page_i >= (2 * MAXIMUM_FILTER_STRINGS_PER_COL)) && (page_i < MAXIMUM_FILTER_STRINGS_PER_PAGE)){
 					if (i == state->selected_filter_string){
-						gfx_Bitmap(420, 70 + ((i - 22) * 25), ui_checkbox_bmp);
+						// This is selected
+						gfx_Bitmap(420, 70 + ((page_i - 22) * 25), ui_checkbox_bmp);
 					} else {
-						gfx_Bitmap(420, 70 + ((i - 22) * 25), ui_checkbox_empty_bmp);
+						// This is not selected
+						gfx_Bitmap(420, 70 + ((page_i - 22) * 25), ui_checkbox_empty_bmp);
 					}
-					gfx_Puts(445, 70 + ((i - 22) * 25), ui_font, state->filter_strings[i]);
+					// Only print the text if we are painting an entirely new window
+					if (redraw == 0){
+						gfx_Puts(445, 70 + ((page_i - 22) * 25), ui_font, state->filter_strings[i]);
+					}
 				}	
 			}
 		}

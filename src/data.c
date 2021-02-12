@@ -53,16 +53,6 @@ gamedata_t * getLastGamedata(gamedata_t *gamedata){
 	return gamedata;
 }
 
-//imagefile_t * getLastImage(imagefile_t *imagefile){
-//	/* Given a imagefile item, find the last entry of the list */
-//	
-//	while (imagefile->next != NULL){
-//		imagefile = imagefile->next;
-//	}
-//	return imagefile;	
-//}
-
-
 gamedir_t * getLastGameDir(gamedir_t *gamedir){
 	/* Given a gamedir search path item, find the last entry of the list */
 	
@@ -106,45 +96,6 @@ int removeGamedata(gamedata_t *gamedata){
 	}
 	return 0;
 }
-
-//int removeImagefile(imagefile_t *imagefile){
-//	/* Remove all nodes of a given imagefile list */
-//	
-//	imagefile_t *head = imagefile;
-//	imagefile_t *next = NULL;
-//	
-//	if (imagefile->next == NULL){
-//		return 0;
-//	}
-//	
-//	if (DATA_VERBOSE){
-//		printf("%s.%d\t removeImagefile() Freeing imagefile list\n", __FILE__, __LINE__);	
-//	}
-//	if (imagefile->next != NULL){
-//		imagefile = imagefile->next;	
-//	}
-//	while(imagefile != NULL){	
-//		if (imagefile->next != NULL){
-//			/* There's another element, so free() this one and
-//			    then move on to the next */
-//			next = imagefile->next;
-//			if (DATA_VERBOSE){
-//				printf("%s.%d\t removeImagefile() Removing image list node [%s]\n", __FILE__, __LINE__, imagefile->filename);	
-//			}
-//			free(imagefile);
-//			imagefile = next;
-//		} else {
-//			if (DATA_VERBOSE){
-//				printf("%s.%d\t removeImagefile() Removing final image node [%s]\n", __FILE__, __LINE__, imagefile->filename);	
-//			}
-//			free(imagefile);
-//			imagefile = head;
-//			return 0;	
-//		}
-//	}
-//	imagefile = head;
-//	return 0;
-//}
 
 int sortGamedata(gamedata_t *gamedata, int verbose){
 	// Sort the list of game data objects by name
@@ -319,12 +270,14 @@ int getSounddat(gamedata_t *gamedata, sounddat_t *sounddat){
 	/* load and return the audio devices available for a given game, based on the data
 	stored in the launch.dat metadatafile. */
 	
+	return 0;
 }
 
 int getVideodat(gamedata_t *gamedata, videodat_t *videodat){
 	/* load and return the video devices available for a given game, based on the data
 	stored in the launch.dat metadatafile. */
 	
+	return 0;
 }
 
 static int configHandler(void* user, const char* section, const char* name, const char* value){
@@ -430,14 +383,6 @@ int getImageList(launchdat_t *launchdat, imagefile_t *imagefile){
 			}
 			strncpy(imagefile->filename[found], p,  MAX_FILENAME_SIZE);
 			
-			/*
-			imagefile = getLastImage(imagefile);
-			imagefile->next = (imagefile_t *) malloc(sizeof(imagefile_t));
-			memset(imagefile->next->filename, '\0', strlen(imagefile->next->filename));
-			strncpy(imagefile->next->filename, p, MAX_FILENAME_SIZE);
-			imagefile->next->prev = imagefile;
-			imagefile->next->next = NULL;
-			*/
 			if (found >= MAX_IMAGES){
 				if (DATA_VERBOSE){
 					printf("%s.%d\t getImageList() Hit limit of %d image filenames\n", __FILE__, __LINE__, MAX_IMAGES);
