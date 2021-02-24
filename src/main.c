@@ -134,6 +134,8 @@ int main() {
 	// Launchdat metadata structure
 	launchdat = (launchdat_t *) malloc(sizeof(launchdat_t));
 	filterdat = (launchdat_t *) malloc(sizeof(launchdat_t));
+	launchdat->hardware = (hwdata_t *) malloc(sizeof(hwdata_t));
+	filterdat->hardware = (hwdata_t *) malloc(sizeof(hwdata_t));
 	
 	/* ************************************** */
 	/* Create an instance of the UI state data */
@@ -363,7 +365,7 @@ int main() {
 		//
 		// ======================               
 		found_tmp = 0;
-		found_tmp = findDirs(gamedir->path, gamedata, found, config);
+		found_tmp = findDirs(gamedir->path, gamedata, found, config, launchdat);
 		found = found + found_tmp;
 		sprintf(msg, "Found %d games in %s", found_tmp, gamedir->path);
 		ui_ProgressMessage(msg);
@@ -914,10 +916,10 @@ int main() {
 						status = filter_Company(state, gamedata, filterdat);
 					}
 					
-					//if (state->selected_filter == FILTER_TECH){
-					//	// Now apply the chosen filter
-					//	status = filter_Tech(state, gamedata);
-					//}
+					if (state->selected_filter == FILTER_TECH){
+						// Now apply the chosen filter
+						status = filter_TechSpecs(state, gamedata, filterdat);
+					}
 					
 					if (config->verbose){
 						printf("%s.%d\t Closing filter popup(s)\n", __FILE__, __LINE__);	

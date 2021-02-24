@@ -43,6 +43,36 @@ typedef struct gamedata {
 	struct gamedata *next;		// Pointer to next gamedata entry
 } gamedata_t;
 
+// Hardware metadata for a game
+typedef struct hwdata {
+	unsigned char beeper;				// Game supports PC speaker
+	unsigned char tandy_audio;			// Tandy 3-voice
+	unsigned char adlib;					// Adlib FM or compatibles
+	unsigned char soundblaster;			// Soundblaster, or equivalent FM + Digital effects
+	unsigned char mt32;					// MT-32, LAPC or other LA-synthesis modules
+	unsigned char gm;					// General MIDI
+	unsigned char covox;					// Covox Speech Thing
+	unsigned char disney;				// Disney Sound Source
+	unsigned char ultrasound;			// Disney Sound Source
+	
+	unsigned char text;					// Game supports text mode
+	unsigned char hercules;				// Hi-resolution Hercules text mode
+	unsigned char tandy_video;			// Tandy colour graphics	
+	unsigned char cga;					// CGA 4 colour graphics
+	unsigned char ega;					// EGA 16 colour graphics
+	unsigned char vga;					// VGA 16 or 256 colour graphics at up to 320x240, or 16 colour at 640x480
+	unsigned char svga;					// VGA 256 colour graphics at 640x400 and upwards
+	
+	unsigned char cpu_8086;				// Can run on IBM XT or 8086
+	unsigned char cpu_286;				// Can run on IBM AT or 286 processors
+	unsigned char cpu_386;				// Can run on 386 or better	
+	unsigned char cpu_486;				// Can run on 486 or better
+	unsigned char cpu_586;				// Can run on 586 or better
+	unsigned char ram_xms;				// Uses XMS memory
+	unsigned char ram_ems;				// Uses EMS memory
+	unsigned char dpmi;					// Uses 32bit protected mode
+} hwdata_t;
+
 // A launchdat object is loaded for the parsed launch.dat file included with a game.
 // Only the currently selected game has this object loaded.
 typedef struct launchdat {
@@ -57,61 +87,16 @@ typedef struct launchdat {
 	char start[MAX_FILENAME_SIZE];		// Name of the main start file
 	char alt_start[MAX_FILENAME_SIZE];	// Name of an alternative start file (e.g a config utility)
 	char images[IMAGE_BUFFER_SIZE];		// String containing all the image filenames
+	struct hwdata *hardware;				// Pointer to hardware data
 } launchdat_t;
 
-// A sounddat object is loaded for the parsed launch.dat file included with a game.
-// Only the currently selected game has this object loaded.
-typedef struct sounddat {
-	unsigned char beeper;				// Game supports PC speaker
-	unsigned char tandy;					// Tandy 3-voice
-	unsigned char adlib;					// Adlib FM or compatibles
-	unsigned char soundblaster;			// Soundblaster, or equivalent FM + Digital effects
-	unsigned char mt32;					// MT-32, LAPC or other LA-synthesis modules
-	unsigned char gm;					// General MIDI
-	unsigned char covox;					// Covox Speech Thing
-	unsigned char disney;				// Disney Sound Source
-	unsigned char ultrasound;			// Disney Sound Source
-} sounddat_t;
-
-// A videodat object is loaded for the parsed launch.dat file included with a game.
-// Only the currently selected game has this object loaded.
-typedef struct videodat {
-	unsigned char text;					// Game supports text mode
-	unsigned char hercules;				// Hi-resolution Hercules text mode
-	unsigned char tandy;					// Tandy colour graphics	
-	unsigned char cga;					// CGA 4 colour graphics
-	unsigned char ega;					// EGA 16 colour graphics
-	unsigned char vga;					// VGA 16 or 256 colour graphics at up to 320x240, or 16 colour at 640x480
-	unsigned char svga;					// VGA 256 colour graphics at 640x400 and upwards
-} videodat_t;
-
-// A cpudat object is loaded for the parsed launch.dat file included with a game.
-// Only the currently selected game has this object loaded.
-typedef struct cpudat {
-	unsigned char cpu_8086;				// Can run on IBM XT or 8086
-	unsigned char cpu_286;				// Can run on IBM AT or 286 processors
-	unsigned char cpu_386;				// Can run on 386 or better	
-	unsigned char cpu_486;				// Can run on 486 or better
-	unsigned char cpu_586;				// Can run on 586 or better
-	unsigned char ram_xms;				// Uses XMS memory
-	unsigned char ram_ems;				// Uses EMS memory
-	unsigned char dpmi;					// Uses 32bit protected mode
-} cpudat_t;
-
-// A list of artwork, parsed from the launchdat file included with a game.
-//typedef struct imagefile {
-//	char filename[MAX_FILENAME_SIZE];	// Filename of an image
-//	struct imagefile *prev;				// Pointer to the previous image file for this game
-//	struct imagefile *next;				// Pointer to the next image file for this game
-//} imagefile_t;
-
+// List of images for the current game
 typedef struct imagefile {
 	char filename[MAX_IMAGES][MAX_FILENAME_SIZE];	// Filename of an image
 	short selected;
 	short first;
 	short last;
 } imagefile_t;
-
 
 // A list of game directories to search and scrape at run time.
 typedef struct gamedir {
@@ -132,9 +117,7 @@ typedef struct config {
 
 // Function prototypes
 gamedata_t *		getLastGamedata(gamedata_t *gamedata);
-imagefile_t *	getLastImage(imagefile_t *imagefile);
 int				removeGamedata(gamedata_t *gamedata);
-//int 				removeImagefile(imagefile_t *imagefile);
 int 				sortGamedata(gamedata_t *gamedata, int verbose);
 int 				swapGamedata(gamedata_t *gamedata1, gamedata_t *gamedata2);
 int 				getLaunchdata(gamedata_t *gamedata, launchdat_t *launchdat);

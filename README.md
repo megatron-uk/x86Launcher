@@ -21,7 +21,11 @@ It runs on real DOS hardware **or** from within Dosbox, either emulated or real 
 
    * It creates a browseable list of all the game directories on your drive(s)
    * It can load and display additional metadata per game (i.e developer, genre, release date etc)
-   * It can load and display screenshots or artwork per game (i.e box art, screenshots, etc)
+   * If metadata is available, it can also do:
+      * Search/Filter games by publisher or developer
+      * Search/Filter by genre (e.g. FPS, Fighting, Adventure, Strategy)
+      * Search/Filter by series (e.g. Ultima 1-8, the DOOM series, Advanced Dungeons and Dragons RPG's)
+      * Load and display screenshots or artwork per game (i.e box art, screenshots, etc)
    * It can export an audit file of all the found games
    * It can launch any game for which a start file is either found (e.g. start.bat), or which has been defined in metadata (e.g. run.com, go.exe, etc)
 
@@ -128,7 +132,6 @@ images=
 series=
 start=
 alt_start=
-
 ```
 
 The fields `name`, `developer` and `genre` are all simple text, maximimum of 32 characters.
@@ -149,17 +152,86 @@ An example is shown below:
 
 ```
 [default]
-name=Advanced Power Dolls 2
-developer=Kogado Studio Inc.
-midi_mpu=0
+name=Duke Nukem 3D
+developer=3D Realms
+publisher=GT Interactive
+midi_mpu=1
 midi_serial=1
 year=1996
-genre=Strategy
+genre=FPS
 images=cover.bmp,screen1.bmp,screen2.bmp,box.bmp
-series=Power Dolls
-start=game.exe
-alt_start=config.exe
+series=Duke Nukem
+start=DUKE3D.EXE
+alt_start=SETUP.EXE
 ```
+
+You could then browse to "Duke Nukem 3D" in the game list, search for it by games published by "GT Interactive", developed by "3D Realms", or all titles in the series "Duke Nukem".
+
+#### Supplementary Metadata
+
+The metadata file can have several other section added to it, which are entirely optional, these sections are:
+
+`[sound]`, `[video]` and `[cpu]`.
+
+##### Sound Metadata
+
+The sound metadata block can have zero, one or more of the following entries:
+
+```
+[sound]
+beeper=
+adlib=
+soundblaster=
+mt32=
+gm=
+tandy=
+ultrasound=
+disney=
+covox=
+```
+
+All entries are set to either 0 or 1 to indicate support for that particular audio device.
+
+##### Sound Metadata
+
+The video metadata block can have zero, one or more of the following entries:
+
+```
+[video]
+text=
+cga=
+ega=
+vga=
+tandy=
+hercules=
+svga=
+```
+
+All entries are set to either 0 or 1 to indicate support for that particular video display device.
+
+##### CPU Metadata
+
+The CPU metadata block can have zero, one or more of the following entries:
+
+```
+[cpu]
+xms=
+ems=
+dpmi=
+8086=
+286=
+386=
+486=
+586=
+```
+
+All entries are set to either 0 or 1. 
+
+For **EMS** and **XMS** a setting of 1 indicates that the title requires DOS memory of that particular type.
+
+For **DPMI** a setting of 1 indicates that the title is a 32bit protected mode game *requiring* a 386 or above in order to run.
+
+For the various x86 cpu types, a setting of 1 indicates that the title will *run adequately* on a processor of that type.
 
 
 ### Converting images to useable BMP files
@@ -174,7 +246,6 @@ You can use any image processing application you want, but it must output images
    * Maximum of 208 colours
    * No larger than 320x200 (but they may be smaller in either dimension, if desireable, e.g. for vertical boxart)
 
-
 If you have the [ImageMagick](https://www.imagemagick.org/) tools available on your system, you can batch convert files using the following syntax:
 
 ```
@@ -182,3 +253,7 @@ convert INPUT.JPG -resize 320x200 -depth 8 -colors 208 -alpha OFF -compress none
 ```
 
 **Note:** *If you do not reduce the number of active colours in use in your screenshots and box art, the images will still show, but they may display incorrectly.*
+
+#### Automating Image Conversion
+
+A script to automate the image conversion (for Linux systems) is included in the `scripts/` directory.

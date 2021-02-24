@@ -31,14 +31,11 @@ int timers_FireArt(clock_t last){
 	// Returns true if the timeout since the last input has
 	// exceeded that to fire the artwork display routine
 	
-	long long int t;
+	long int t;
 	
 	t = clock() - last;
 	
-	
-	
 	if (t > ARTWORK_FIRE){
-		printf("%d - Firing\n", t);
 		return 1;
 	} else {
 		return 0;	

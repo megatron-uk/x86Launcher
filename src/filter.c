@@ -738,3 +738,221 @@ int filter_Company(state_t *state, gamedata_t *gamedata, launchdat_t *filterdat)
 	}
 	return FILTER_OK;
 }
+
+int filter_TechSpecs(state_t *state, gamedata_t *gamedata, launchdat_t *filterdat){
+	// Filter the list of games based on one or more selected technical criteria
+	// set in the state->filter_strings_selected array
+	
+	char filter_string[MAX_STRING_SIZE];
+	int i, f;
+	int status;
+	unsigned short added_list[SELECTION_LIST_SIZE];
+	unsigned char continue_search;
+	
+	gamedata_t *gamedata_head;
+	
+	gamedata_head = gamedata; // Store first item
+	
+	if (FILTER_VERBOSE){
+		printf("%s.%d\t Building tech specs selection list\n", __FILE__, __LINE__);
+		printf("%s.%d\t Info - Clearing existing selection list\n", __FILE__, __LINE__);
+	}
+	// Empty list
+	for(i =0; i <SELECTION_LIST_SIZE; i++){
+		state->selected_list[i] = -1;
+	}
+	
+	// Determine if we are filtering any of cpu/video/audio tech specs
+	if (FILTER_VERBOSE){
+		for(f = 0; f <MAXIMUM_FILTER_STRINGS; f++){
+			if (state->filter_strings_selected[f] == 1){
+				printf("%s.%d\t - Adding filter for: %s\n", __FILE__, __LINE__, state->filter_strings[f]);
+			}
+		}
+	}
+	
+	i = 0;
+	while(gamedata != NULL){
+		
+		if (FILTER_VERBOSE){
+			printf("%s.%d\t Searching for matches in %s\n", __FILE__, __LINE__, gamedata->name);
+		}
+		// Does game have metadata
+		if (gamedata->has_dat){
+			status = getLaunchdata(gamedata, filterdat);
+			// Was metadata loaded
+			if (status == 0){
+				continue_search = 1;
+				// Yes, search for matching filter strings
+				for(f = 0; f <MAXIMUM_FILTER_STRINGS; f++){
+					
+					// This filter is selected
+					if (state->filter_strings_selected[f] == 1){
+
+						// Audio search criteria .........................
+						
+						if (strcmp(state->filter_strings[f], FILTER_STRING_AUDIO_BEEPER) == 0){
+							if (filterdat->hardware->beeper != 1){
+								continue_search = 0;
+							}
+						}
+						if (strcmp(state->filter_strings[f], FILTER_STRING_AUDIO_TANDY) == 0){
+							if (filterdat->hardware->tandy_audio != 1){
+								continue_search = 0;
+							}
+						}
+						if (strcmp(state->filter_strings[f], FILTER_STRING_AUDIO_ADLIB) == 0){
+							if (filterdat->hardware->adlib != 1){
+								continue_search = 0;
+							}
+						}
+						if (strcmp(state->filter_strings[f], FILTER_STRING_AUDIO_SB) == 0){
+							if (filterdat->hardware->soundblaster != 1){
+								continue_search = 0;
+							}
+						}
+						if (strcmp(state->filter_strings[f], FILTER_STRING_AUDIO_MT32) == 0){
+							if (filterdat->hardware->mt32 != 1){
+								continue_search = 0;
+							}
+						}
+						if (strcmp(state->filter_strings[f], FILTER_STRING_AUDIO_GM) == 0){
+							if (filterdat->hardware->gm != 1){
+								continue_search = 0;
+							}
+						}
+						if (strcmp(state->filter_strings[f], FILTER_STRING_AUDIO_COVOX) == 0){
+							if (filterdat->hardware->covox != 1){
+								continue_search = 0;
+							}
+						}
+						if (strcmp(state->filter_strings[f], FILTER_STRING_AUDIO_DISNEY) == 0){
+							if (filterdat->hardware->disney != 1){
+								continue_search = 0;
+							}
+						}
+						if (strcmp(state->filter_strings[f], FILTER_STRING_AUDIO_GUS) == 0){
+							if (filterdat->hardware->ultrasound != 1){
+								continue_search = 0;
+							}
+						}
+						
+						// Video search criteria .........................
+						if (strcmp(state->filter_strings[f], FILTER_STRING_VIDEO_TEXT) == 0){
+							if (filterdat->hardware->text != 1){
+								continue_search = 0;
+							}
+						}
+						if (strcmp(state->filter_strings[f], FILTER_STRING_VIDEO_HERCULES) == 0){
+							if (filterdat->hardware->hercules != 1){
+								continue_search = 0;
+							}
+						}
+						if (strcmp(state->filter_strings[f], FILTER_STRING_VIDEO_TANDY) == 0){
+							if (filterdat->hardware->tandy_video != 1){
+								continue_search = 0;
+							}
+						}
+						if (strcmp(state->filter_strings[f], FILTER_STRING_VIDEO_CGA) == 0){
+							if (filterdat->hardware->cga != 1){
+								continue_search = 0;
+							}
+						}
+						if (strcmp(state->filter_strings[f], FILTER_STRING_VIDEO_EGA) == 0){
+							if (filterdat->hardware->ega != 1){
+								continue_search = 0;
+							}
+						}
+						if (strcmp(state->filter_strings[f], FILTER_STRING_VIDEO_VGA) == 0){
+							if (filterdat->hardware->vga != 1){
+								continue_search = 0;
+							}
+						}
+						if (strcmp(state->filter_strings[f], FILTER_STRING_VIDEO_SVGA) == 0){
+							if (filterdat->hardware->svga != 1){
+								continue_search = 0;
+							}
+						}
+						
+						// CPU/Misc search criteria .........................
+						if (strcmp(state->filter_strings[f], FILTER_STRING_CPU_8086) == 0){
+							if (filterdat->hardware->cpu_8086 != 1){
+								continue_search = 0;
+							}
+						}
+						if (strcmp(state->filter_strings[f], FILTER_STRING_CPU_80286) == 0){
+							if (filterdat->hardware->cpu_286 != 1){
+								continue_search = 0;
+							}
+						}
+						if (strcmp(state->filter_strings[f], FILTER_STRING_CPU_80386) == 0){
+							if (filterdat->hardware->cpu_386 != 1){
+								continue_search = 0;
+							}
+						}
+						if (strcmp(state->filter_strings[f], FILTER_STRING_CPU_80486) == 0){
+							if (filterdat->hardware->cpu_486 != 1){
+								continue_search = 0;
+							}
+						}
+						if (strcmp(state->filter_strings[f], FILTER_STRING_CPU_80586) == 0){
+							if (filterdat->hardware->cpu_586 != 1){
+								continue_search = 0;
+							}
+						}
+						if (strcmp(state->filter_strings[f], FILTER_STRING_RAM_XMS) == 0){
+							if (filterdat->hardware->ram_xms != 1){
+								continue_search = 0;
+							}
+						}
+						if (strcmp(state->filter_strings[f], FILTER_STRING_RAM_EMS) == 0){
+							if (filterdat->hardware->ram_ems != 1){
+								continue_search = 0;
+							}
+						}
+						if (strcmp(state->filter_strings[f], FILTER_STRING_MISC_DPMI) == 0){
+							if (filterdat->hardware->dpmi != 1){
+								continue_search = 0;
+							}
+						}
+					}
+					
+					// The search is a composite AND statement,
+					// if any of the results is false, then we
+					// exit out of the search loop for this game.
+					if (continue_search != 1){
+						break;	
+					}
+				}
+			}
+			
+			// If continue_search was still set, then this search must
+			// have satisfied all critera. Therefore add it to the found list.
+			if (continue_search == 1){
+				if (FILTER_VERBOSE){
+					printf("%s.%d\t - All criteria matched for %s\n", __FILE__, __LINE__, filterdat->realname);
+				}
+				state->selected_list[i] = gamedata->gameid;
+				i++;	
+			}
+		}
+		gamedata = gamedata->next;
+	}
+	
+	gamedata = gamedata_head;	// Restore head
+	state->selected_max = i; 	// Number of items in selection list
+	state->selected_page = 1;	// Start on page 1
+	state->selected_line = 0;	// Start on line 0
+	state->total_pages = 0;		
+	state->selected_filter_string = 0;
+	state->selected_gameid = state->selected_list[0]; 	// Initial game is the 0th element of the selection list
+	state->selected_game = getGameid(state->selected_gameid, gamedata);
+	for(i = 0; i <= state->selected_max ; i++){
+		if (i % ui_browser_max_lines == 0){
+			state->total_pages++;
+		}
+	}
+	
+	return FILTER_OK;
+	
+}

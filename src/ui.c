@@ -1456,12 +1456,19 @@ int ui_UpdateInfoPane(state_t *state, gamedata_t *gamedata, launchdat_t *launchd
 					printf("%s.%d\t ui_UpdateInfoPane()  - year: %s\n", __FILE__, __LINE__, info_year);
 				}
 				
+				// If we have publisher and developer, print both
 				if ((strlen(launchdat->developer) > 0) && (strlen(launchdat->publisher) > 0)){
 					sprintf(info_company, " %s / %s", launchdat->developer, launchdat->publisher);
+					
+				// If we just have developer, print that
 				} else if (strlen(launchdat->developer) > 0){
 					sprintf(info_company, " %s", launchdat->developer);
+					
+				// If we just have publisher, print that
 				} else if (strlen(launchdat->publisher) > 0){
 					sprintf(info_company, " %s", launchdat->publisher);
+					
+				// If we have nothing...
 				} else {
 					sprintf(info_company, " N/A");
 				}

@@ -139,7 +139,7 @@ int dirHasData(char *path){
 	return found;
 }
 
-int findDirs(char *path, gamedata_t *gamedata, int startnum, config_t *config){
+int findDirs(char *path, gamedata_t *gamedata, int startnum, config_t *config, launchdat_t *launchdat){
 	/* Open a search path and return a count of any directories found, creating a gamedata object for each one. */
 	
 	// path: Fully qualified path to search, e.g. "A:\Games"
@@ -161,9 +161,6 @@ int findDirs(char *path, gamedata_t *gamedata, int startnum, config_t *config){
 	char search_drive;
 	char search_dirname[DIR_BUFFER_SIZE];
 	
-	// Hold info from game metadata
-	launchdat_t *launchdat = NULL;
-	
 	/* initialise counters */
 	go = 1;
 	found = 0;
@@ -173,8 +170,6 @@ int findDirs(char *path, gamedata_t *gamedata, int startnum, config_t *config){
 	/* initialise the directory or search dirname buffer */
 	memset(old_dir_buffer, '\0', sizeof(old_dir_buffer));
 	memset(search_dirname, '\0', sizeof(search_dirname));
-	
-	launchdat = (launchdat_t *) malloc(sizeof(launchdat_t));	
 	
 	/* split drive and dirname from search path */
 	search_drive = drvLetterFromPath(path);
@@ -192,10 +187,6 @@ int findDirs(char *path, gamedata_t *gamedata, int startnum, config_t *config){
 	
 	/* save curdir */
 	getcwd(old_dir_buffer, DIR_BUFFER_SIZE);
-	//if (old_dir_buffer[0] != '\0'){
-	//	printf("%s.%d\t Unable to save current directory [status:%d]\n", __FILE__, __LINE__, status);
-	//	return -1;
-	//}
 
 	if (isDir(path)){				
 		/* change to actual search path */
@@ -272,7 +263,6 @@ int findDirs(char *path, gamedata_t *gamedata, int startnum, config_t *config){
 		return -1;
 	}
 	
-	//free(launchdat);
 	return found;
 }
 

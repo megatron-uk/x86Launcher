@@ -36,7 +36,7 @@ int 		dirHasData(char *path);
 char 	drvLetterFromPath(char *path);
 int 		drvLetterToNum(char drive_letter);
 char		drvNumToLetter(int drive_number);
-int 		findDirs(char *path, gamedata_t *gamedata, int startnum, config_t *config);
+int 		findDirs(char *path, gamedata_t *gamedata, int startnum, config_t *config, launchdat_t *launchdat);
 int 		isDir(char *path);
 int 		writeRunBat(state_t *state, launchdat_t *launchdat);
 int 		zeroRunBat();

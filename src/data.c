@@ -178,7 +178,7 @@ static int launchdatHandler(void* user, const char* section, const char* name, c
 		strncpy(launchdat->genre, value, MAX_STRING_SIZE);
 		
 	} else if (MATCH("default", "developer")){
-		strncpy(launchdat->publisher, value, MAX_STRING_SIZE);
+		strncpy(launchdat->developer, value, MAX_STRING_SIZE);
 		
 	} else if (MATCH("default", "publisher")){
 		strncpy(launchdat->publisher, value, MAX_STRING_SIZE);
@@ -205,7 +205,105 @@ static int launchdatHandler(void* user, const char* section, const char* name, c
 		
 	} else if (MATCH("default", "series")){
 		strncpy(launchdat->series, value, MAX_STRING_SIZE);
-		
+	// audio hardware metadata 
+	} else if (MATCH("sound", "beeper")){
+		if (atoi(value) == 1){
+			launchdat->hardware->beeper = 1;
+		}
+	} else if (MATCH("sound", "tandy")){
+		if (atoi(value) == 1){
+			launchdat->hardware->tandy_audio = 1;
+		}
+	} else if (MATCH("sound", "adlib")){
+		if (atoi(value) == 1){
+			launchdat->hardware->adlib = 1;
+		}
+	} else if (MATCH("sound", "soundblaster")){
+		if (atoi(value) == 1){
+			launchdat->hardware->soundblaster = 1;
+		}
+	} else if (MATCH("sound", "mt32")){
+		if (atoi(value) == 1){
+			launchdat->hardware->mt32 = 1;
+		}
+	} else if (MATCH("sound", "gm")){
+		if (atoi(value) == 1){
+			launchdat->hardware->gm = 1;
+		}
+	} else if (MATCH("sound", "covox")){
+		if (atoi(value) == 1){
+			launchdat->hardware->covox = 1;
+		}
+	} else if (MATCH("sound", "disney")){
+		if (atoi(value) == 1){
+			launchdat->hardware->disney = 1;
+		}
+	} else if (MATCH("sound", "ultrasound")){
+		if (atoi(value) == 1){
+			launchdat->hardware->ultrasound = 1;
+		}
+	// video hardware metadata
+	} else if (MATCH("video", "text")){
+		if (atoi(value) == 1){
+			launchdat->hardware->text = 1;
+		}
+	} else if (MATCH("video", "hercules")){
+		if (atoi(value) == 1){
+			launchdat->hardware->hercules = 1;
+		}
+	} else if (MATCH("video", "tandy")){
+		if (atoi(value) == 1){
+			launchdat->hardware->tandy_video = 1;
+		}
+	} else if (MATCH("video", "cga")){
+		if (atoi(value) == 1){
+			launchdat->hardware->cga = 1;
+		}
+	} else if (MATCH("video", "ega")){
+		if (atoi(value) == 1){
+			launchdat->hardware->ega = 1;
+		}
+	} else if (MATCH("video", "vga")){
+		if (atoi(value) == 1){
+			launchdat->hardware->vga = 1;
+		}
+	} else if (MATCH("video", "svga")){
+		if (atoi(value) == 1){
+			launchdat->hardware->svga = 1;
+		}	
+	// cpu/misc hardware metadata
+	} else if (MATCH("cpu", "8086")){
+		if (atoi(value) == 1){
+			launchdat->hardware->cpu_8086 = 1;
+		}
+	} else if (MATCH("cpu", "286")){
+		if (atoi(value) == 1){
+			launchdat->hardware->cpu_286 = 1;
+		}
+	} else if (MATCH("cpu", "386")){
+		if (atoi(value) == 1){
+			launchdat->hardware->cpu_386 = 1;
+		}
+	} else if (MATCH("cpu", "486")){
+		if (atoi(value) == 1){
+			launchdat->hardware->cpu_486 = 1;
+		}
+	} else if (MATCH("cpu", "586")){
+		if (atoi(value) == 1){
+			launchdat->hardware->cpu_586 = 1;
+		}
+	} else if (MATCH("cpu", "xms")){
+		if (atoi(value) == 1){
+			launchdat->hardware->ram_xms = 1;
+		}
+	} else if (MATCH("cpu", "ems")){
+		if (atoi(value) == 1){
+			launchdat->hardware->ram_ems = 1;
+		}
+	} else if (MATCH("cpu", "dpmi")){
+		if (atoi(value) == 1){
+			launchdat->hardware->dpmi = 1;
+		}
 	} else {
 		return 0;  /* unknown section/name, error */
 	}
@@ -226,6 +324,36 @@ void launchdataDefaults(launchdat_t *launchdat){
 	launchdat->year = DEFAULT_YEAR;
 	launchdat->midi = 0;
 	launchdat->midi_serial = 0;
+	
+	// Audio defaults
+	launchdat->hardware->beeper = 0;
+	launchdat->hardware->tandy_audio = 0;
+	launchdat->hardware->adlib = 0;
+	launchdat->hardware->soundblaster = 0;
+	launchdat->hardware->mt32 = 0;
+	launchdat->hardware->gm = 0;
+	launchdat->hardware->covox = 0;
+	launchdat->hardware->disney = 0;
+	launchdat->hardware->ultrasound = 0;
+	
+	// Video defaults
+	launchdat->hardware->text = 0;
+	launchdat->hardware->hercules = 0;
+	launchdat->hardware->tandy_video = 0;
+	launchdat->hardware->cga = 0;
+	launchdat->hardware->ega = 0;
+	launchdat->hardware->vga = 0;
+	launchdat->hardware->svga = 0;
+	
+	// CPU/misc defaults
+	launchdat->hardware->cpu_8086 = 0;
+	launchdat->hardware->cpu_286 = 0;
+	launchdat->hardware->cpu_386 = 0;
+	launchdat->hardware->cpu_486 = 0;
+	launchdat->hardware->cpu_586 = 0;
+	launchdat->hardware->ram_xms = 0;
+	launchdat->hardware->ram_ems = 0;
+	launchdat->hardware->dpmi = 0;
 }
 
 void configDefaults(config_t *config){
@@ -264,20 +392,6 @@ int getLaunchdata(gamedata_t *gamedata, launchdat_t *launchdat){
 		}
 		return 0;
 	}
-}
-
-int getSounddat(gamedata_t *gamedata, sounddat_t *sounddat){
-	/* load and return the audio devices available for a given game, based on the data
-	stored in the launch.dat metadatafile. */
-	
-	return 0;
-}
-
-int getVideodat(gamedata_t *gamedata, videodat_t *videodat){
-	/* load and return the video devices available for a given game, based on the data
-	stored in the launch.dat metadatafile. */
-	
-	return 0;
 }
 
 static int configHandler(void* user, const char* section, const char* name, const char* value){
