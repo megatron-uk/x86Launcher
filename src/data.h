@@ -29,6 +29,7 @@
 #define MAX_DIRS				16					// Maximum number of game search paths - 16 sounds... okay?
 #define MAX_FILENAME_SIZE    13					// 8 + 3 + 1 for the ., plus 1 for \0
 #define MAX_STRING_SIZE		32
+#define MAX_NAME_SIZE		44
 #define MAX_SEARCHDIRS_SIZE	1024
 #define DATA_VERBOSE			0
 #define MAX_PATH_SIZE		65
@@ -38,7 +39,7 @@ typedef struct gamedata {
 	int gameid;					// Unique ID for this game - assigned at scan time
 	char drive;					// Drive letter
 	char path[MAX_PATH_SIZE];	// Full drive and path name; e.g. A:\Games\FinalFight
-	char name[MAX_STRING_SIZE];	// Just the directory name; e.g. FinalFight
+	char name[MAX_NAME_SIZE];	// Just the directory name; e.g. FinalFight
 	int has_dat;					// Flag to indicate __launch.dat was found in the game directory
 	struct gamedata *next;		// Pointer to next gamedata entry
 } gamedata_t;
@@ -76,7 +77,7 @@ typedef struct hwdata {
 // A launchdat object is loaded for the parsed launch.dat file included with a game.
 // Only the currently selected game has this object loaded.
 typedef struct launchdat {
-	char realname[MAX_STRING_SIZE];		// A 'friendly' name to display the game as, instead of just the directory name
+	char realname[MAX_NAME_SIZE];		// A 'friendly' name to display the game as, instead of just the directory name
 	char genre[MAX_STRING_SIZE];			// A string to represent the genre, in case we want to filter by genre
 	int year;							// Year the game was released
 	int midi;							// Supports MIDI out

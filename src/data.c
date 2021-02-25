@@ -172,7 +172,7 @@ static int launchdatHandler(void* user, const char* section, const char* name, c
 		
 	#define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
 	if (MATCH("default", "name")){
-		strncpy(launchdat->realname, value, MAX_STRING_SIZE);
+		strncpy(launchdat->realname, value, MAX_NAME_SIZE);
 		
 	} else if (MATCH("default", "genre")){
 		strncpy(launchdat->genre, value, MAX_STRING_SIZE);

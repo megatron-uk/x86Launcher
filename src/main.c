@@ -697,6 +697,26 @@ int main() {
 					exit = 1;
 					zeroRunBat();
 					break;
+				case(input_cancel):
+					if (config->verbose){
+						printf("%s.%d\t Closing help popup\n", __FILE__, __LINE__);	
+					}
+					active_pane = BROWSER_PANE;
+					// exit and redraw main window
+					if (config->verbose){
+						printf("%s.%d\t Redrawing main screen for Game ID: %d, %s\n", __FILE__, __LINE__, state->selected_gameid, state->selected_game->name);	
+					}
+					ui_DrawMainWindow();
+					ui_UpdateBrowserPane(state, gamedata);
+					gfx_Flip();
+					ui_DrawInfoBox();
+					ui_ReselectCurrentGame(state);
+					ui_UpdateInfoPane(state, gamedata, launchdat);
+					ui_UpdateBrowserPaneStatus(state);
+					gfx_Flip();
+					ui_DisplayArtwork(screenshot_file, screenshot_bmp, screenshot_bmp_state, state, imagefile);
+					gfx_Flip();
+					break;
 				default:
 					break;
 			}
@@ -983,7 +1003,9 @@ int main() {
 					if (config->verbose){
 						printf("%s.%d\t Attempting launch help popup...\n", __FILE__, __LINE__);	
 					}
-					//active_pane = HELP_PANE;
+					active_pane = HELP_PANE;
+					ui_DrawHelpPopup();
+					gfx_Flip();
 					break;
 				case(input_filter):
 					// Show filter screen
@@ -1065,7 +1087,7 @@ int main() {
 					// Detect if selected game has changed
 					start_time = clock();
 					ui_ReselectCurrentGame(state);
-					ui_UpdateBrowserPane(state, gamedata);
+					//ui_UpdateBrowserPane(state, gamedata);
 					ui_UpdateBrowserPaneStatus(state);
 					end_time = clock();
 					timers_Print(start_time, end_time, "Scroll Browser Up", config->timers);
@@ -1092,7 +1114,7 @@ int main() {
 					// Detect if selected game has changed
 					start_time = clock();
 					ui_ReselectCurrentGame(state);
-					ui_UpdateBrowserPane(state, gamedata);
+					//ui_UpdateBrowserPane(state, gamedata);
 					ui_UpdateBrowserPaneStatus(state);
 					end_time = clock();
 					timers_Print(start_time, end_time, "Scroll Browser Down", config->timers);
@@ -1180,7 +1202,7 @@ int main() {
 			// ===================================================================
 			
 			// Only refresh browser, artwork and info panes if the selected game has changed
-			if (old_gameid != state->selected_gameid){
+			if ((old_gameid != state->selected_gameid) && (active_pane == BROWSER_PANE)){
 							
 				// Only fire the artwork/metadata load routine after a pre-set timeout after
 				// the last user input - we could be fast scrolling through the list and

@@ -574,6 +574,19 @@ int ui_DrawFilterPopup(state_t *state, int select, int redraw, int toggle){
 	
 }
 
+int ui_DrawHelpPopup(){
+	// Display the full-screen help text	
+	
+	// Draw main box
+	gfx_BoxFill(30, 40, GFX_COLS - 40, GFX_ROWS - 40, PALETTE_UI_BLACK);
+	// Draw main box outline
+	gfx_Box(30, 40, GFX_COLS - 40, GFX_ROWS - 40, PALETTE_UI_LGREY);
+	
+	gfx_Puts(240, 45, ui_font, "X86Launcher - Help");
+	
+	return UI_OK;
+}
+
 int ui_DrawInfoBox(){
 	// Draw a fresh info panel
 	
@@ -1426,9 +1439,9 @@ int ui_UpdateInfoPane(state_t *state, gamedata_t *gamedata, launchdat_t *launchd
 				}
 				
 				if (strlen(launchdat->realname) > 0){
-					sprintf(info_name, " %.64s", launchdat->realname);
+					sprintf(info_name, " %.48s", launchdat->realname);
 				} else {
-					sprintf(info_name, " %.64s", state->selected_game->name);
+					sprintf(info_name, " %.48s", state->selected_game->name);
 				}
 				if (UI_VERBOSE){
 					printf("%s.%d\t ui_UpdateInfoPane()  - name: %s\n", __FILE__, __LINE__, info_name);

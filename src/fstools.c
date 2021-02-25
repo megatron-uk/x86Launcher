@@ -235,7 +235,7 @@ int findDirs(char *path, gamedata_t *gamedata, int startnum, config_t *config, l
 										if (FS_VERBOSE){
 											printf("%s.%d\t Realname: %s\n", __FILE__, __LINE__, launchdat->realname);
 										}
-										strncpy(gamedata->next->name, launchdat->realname, MAX_STRING_SIZE);
+										strncpy(gamedata->next->name, launchdat->realname, MAX_NAME_SIZE);
 									} else {
 										if (FS_VERBOSE){
 											printf("%s.%d\t Metadata not found!\n", __FILE__, __LINE__);
