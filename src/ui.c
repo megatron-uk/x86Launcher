@@ -1274,7 +1274,11 @@ int ui_UpdateBrowserPane(state_t *state, gamedata_t *gamedata){
 		if (UI_VERBOSE){
 			printf("%s.%d\t ui_UpdateBrowserPane() - Line %d: Game ID %d, %s\n", __FILE__, __LINE__, i, gameid, selected_game->name);
 		}
-		sprintf(msg, "%s", selected_game->name);
+		if (strlen(selected_game->name) > 30){
+			sprintf(msg, "%.28s..", selected_game->name);
+		} else {
+			sprintf(msg, "%s", selected_game->name);
+		}	
 		gfx_Puts(ui_browser_font_x_pos, y, ui_font, msg);
 		y += ui_font->height + 2;
 	}
@@ -1316,6 +1320,7 @@ int ui_UpdateInfoPane(state_t *state, gamedata_t *gamedata, launchdat_t *launchd
 	// snprintf instead of sprintf to limit string sizes
 	
 	int		status;
+	char		s1, s2;
 	char		status_msg[64];		// Message buffer for anything needing to be printed onscreen
 	char		info_name[64];
 	char		info_year[8];
@@ -1374,12 +1379,12 @@ int ui_UpdateInfoPane(state_t *state, gamedata_t *gamedata, launchdat_t *launchd
 				gfx_Bitmap(ui_checkbox_has_images_xpos, ui_checkbox_has_images_ypos, ui_checkbox_empty_bmp);
 				gfx_Bitmap(ui_checkbox_has_midi_xpos, ui_checkbox_has_midi_ypos, ui_checkbox_empty_bmp);
 				gfx_Bitmap(ui_checkbox_has_midi_serial_xpos, ui_checkbox_has_midi_serial_ypos, ui_checkbox_empty_bmp);
-				sprintf(info_name, " %s", state->selected_game->name);
+				sprintf(info_name, " %.64s", state->selected_game->name);
 				sprintf(info_year, "N/A");
 				sprintf(info_company, " N/A");
 				sprintf(info_genre, "N/A");
 				sprintf(info_series, "");
-				sprintf(info_path, " %s", state->selected_game->path);
+				sprintf(info_path, " %.38s", state->selected_game->path);
 			} else {
 				// ======================
 				// Loaded launch.dat from disk
@@ -1408,11 +1413,11 @@ int ui_UpdateInfoPane(state_t *state, gamedata_t *gamedata, launchdat_t *launchd
 					gfx_Bitmap(ui_checkbox_has_midi_xpos, ui_checkbox_has_midi_ypos, ui_checkbox_empty_bmp);
 				}
 				
-				if (launchdat->midi_serial == 1){
-					gfx_Bitmap(ui_checkbox_has_midi_serial_xpos, ui_checkbox_has_midi_serial_ypos, ui_checkbox_bmp);
-				} else {
-					gfx_Bitmap(ui_checkbox_has_midi_serial_xpos, ui_checkbox_has_midi_serial_ypos, ui_checkbox_empty_bmp);
-				}
+				//if (launchdat->midi_serial == 1){
+				//	gfx_Bitmap(ui_checkbox_has_midi_serial_xpos, ui_checkbox_has_midi_serial_ypos, ui_checkbox_bmp);
+				//} else {
+				//	gfx_Bitmap(ui_checkbox_has_midi_serial_xpos, ui_checkbox_has_midi_serial_ypos, ui_checkbox_empty_bmp);
+				//}
 				
 				if ((launchdat->start != NULL) && (strcmp(launchdat->start, "") != 0)){
 					gfx_Bitmap(ui_checkbox_has_startbat_xpos, ui_checkbox_has_startbat_ypos, ui_checkbox_bmp);
@@ -1420,10 +1425,10 @@ int ui_UpdateInfoPane(state_t *state, gamedata_t *gamedata, launchdat_t *launchd
 					gfx_Bitmap(ui_checkbox_has_startbat_xpos, ui_checkbox_has_startbat_ypos, ui_checkbox_empty_bmp);
 				}
 				
-				if (launchdat->realname != NULL){
+				if (strlen(launchdat->realname) > 0){
 					sprintf(info_name, " %.64s", launchdat->realname);
 				} else {
-					sprintf(info_name, " %s", state->selected_game->name);
+					sprintf(info_name, " %.64s", state->selected_game->name);
 				}
 				if (UI_VERBOSE){
 					printf("%s.%d\t ui_UpdateInfoPane()  - name: %s\n", __FILE__, __LINE__, info_name);
@@ -1456,17 +1461,35 @@ int ui_UpdateInfoPane(state_t *state, gamedata_t *gamedata, launchdat_t *launchd
 					printf("%s.%d\t ui_UpdateInfoPane()  - year: %s\n", __FILE__, __LINE__, info_year);
 				}
 				
+				s1 = strlen(launchdat->developer);
+				s2 = strlen(launchdat->publisher);
+				
 				// If we have publisher and developer, print both
-				if ((strlen(launchdat->developer) > 0) && (strlen(launchdat->publisher) > 0)){
-					sprintf(info_company, " %s / %s", launchdat->developer, launchdat->publisher);
+				if ((s1 > 0) && (s2 > 0)){
+					
+					if (s1 + s2 <= 33){
+						sprintf(info_company, " %s/%s", launchdat->developer, launchdat->publisher);
+					} else {
+						if (s1 >= 16){
+							// If publisher is long, then prioritise it
+							if (s2 > 12){
+								sprintf(info_company, " %.20s/%.12s..", launchdat->developer, launchdat->publisher);
+							} else {
+								sprintf(info_company, " %.20s/%s", launchdat->developer, launchdat->publisher);
+							}
+						} else {
+							// Otherwise just print both strings truncated to 16 places
+							sprintf(info_company, " %.16s/%.16s", launchdat->developer, launchdat->publisher);
+						}
+					}
 					
 				// If we just have developer, print that
 				} else if (strlen(launchdat->developer) > 0){
-					sprintf(info_company, " %s", launchdat->developer);
+					sprintf(info_company, " %.34s", launchdat->developer);
 					
 				// If we just have publisher, print that
 				} else if (strlen(launchdat->publisher) > 0){
-					sprintf(info_company, " %s", launchdat->publisher);
+					sprintf(info_company, " %.34s", launchdat->publisher);
 					
 				// If we have nothing...
 				} else {
@@ -1480,7 +1503,7 @@ int ui_UpdateInfoPane(state_t *state, gamedata_t *gamedata, launchdat_t *launchd
 				
 				// Number of images/screenshots
 	
-				sprintf(info_path, " %s", state->selected_game->path);
+				sprintf(info_path, " %.38s", state->selected_game->path);
 			}
 		} else {
 			// ======================
@@ -1492,12 +1515,12 @@ int ui_UpdateInfoPane(state_t *state, gamedata_t *gamedata, launchdat_t *launchd
 			gfx_Bitmap(ui_checkbox_has_midi_xpos, ui_checkbox_has_midi_ypos, ui_checkbox_empty_bmp);
 			gfx_Bitmap(ui_checkbox_has_midi_serial_xpos, ui_checkbox_has_midi_serial_ypos, ui_checkbox_empty_bmp);
 				
-			sprintf(info_name, " %s", state->selected_game->name);
+			sprintf(info_name, " %.64s", state->selected_game->name);
 			sprintf(info_year, "N/A");
 			sprintf(info_company, " N/A");
 			sprintf(info_genre, "N/A");
 			sprintf(info_series, "N/A");
-			sprintf(info_path, " %s", state->selected_game->path);		
+			sprintf(info_path, " %.38s", state->selected_game->path);		
 		}	
 	} else {
 		// ======================

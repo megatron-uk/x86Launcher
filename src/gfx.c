@@ -180,6 +180,7 @@ int gfx_Init(){
 		printf("%s.%d\t gfx_Init() VESA memory windows needed: %ld\n", __FILE__, __LINE__, windows_in_use);
 	}
 	
+	pal_SetUI();
 	gfx_Clear();
 	gfx_Flip();
 	
@@ -219,8 +220,7 @@ void gfx_Clear(){
 	}
 	
 	// Set local vram_buffer to empty
-	memset(vram_buffer, PALETTE_UI_BLACK, sizeof(vram_buffer));
-	
+	memset(vram_buffer, PALETTE_UI_BLACK, sizeof(vram_buffer));	
 }
 
 void gfx_TextOn(){
