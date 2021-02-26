@@ -578,11 +578,32 @@ int ui_DrawHelpPopup(){
 	// Display the full-screen help text	
 	
 	// Draw main box
-	gfx_BoxFill(30, 40, GFX_COLS - 40, GFX_ROWS - 40, PALETTE_UI_BLACK);
+	gfx_BoxFill(30, 20, GFX_COLS - 40, GFX_ROWS - 20, PALETTE_UI_BLACK);
 	// Draw main box outline
-	gfx_Box(30, 40, GFX_COLS - 40, GFX_ROWS - 40, PALETTE_UI_LGREY);
+	gfx_Box(30, 20, GFX_COLS - 40, GFX_ROWS - 20, PALETTE_UI_LGREY);
 	
-	gfx_Puts(240, 45, ui_font, "X86Launcher - Help");
+	gfx_Puts(240, 25, ui_font, "X86Launcher - Help");
+	
+	// Key help
+	gfx_Puts(40, 45, ui_font, "Key controls:");
+	gfx_Puts(40, 65, ui_font, "- [F]      Bring up the game search/filter window");
+	gfx_Puts(40, 85, ui_font, "- [H]      Show this help text window");
+	gfx_Puts(40, 105, ui_font, "- [Q]      Quit the application");
+	gfx_Puts(40, 125, ui_font, "- [Space]  Select a filter in a multi-select filter window");
+	gfx_Puts(40, 145, ui_font, "- [Enter]  Confirm a filter choice or launch selected gameq");
+	gfx_Puts(40, 165, ui_font, "- [Esc]    Close the current window or Cancel a selection");
+	
+	// Filter help
+	gfx_Puts(40, 200, ui_font, "Search/Filter:");
+	gfx_Puts(40, 220, ui_font, "You can search your list of games by [Genre], [Series], [Company] or");
+	gfx_Puts(40, 240, ui_font, "by selecting one or more [Tech Specs] such as specific sound or audio");
+	gfx_Puts(40, 260, ui_font, "device. Your games must have metadata [launch.dat] for this to work.");
+	
+	// Launching help
+	gfx_Puts(40, 295, ui_font, "Game Browser:");
+	gfx_Puts(40, 315, ui_font, "[Up] & [Down] scrolls through the list of games on a page. [PageUp]");
+	gfx_Puts(40, 335, ui_font, "& [PageDown] jumps an entire page at a time. [Enter] launches the");
+	gfx_Puts(40, 355, ui_font, "currently selected game. [Left] & [Right] scrolls through artwork.");
 	
 	return UI_OK;
 }

@@ -1079,15 +1079,20 @@ int main() {
 							state->selected_page--;
 						}
 						// Reset to line 1 of the new page
-						state->selected_line = 0;							
+						state->selected_line = 0;	
+						state->page_changed = 1;
 					} else {
 						// Move up one line
 						state->selected_line--;
+						state->page_changed = 0;
 					}
 					// Detect if selected game has changed
 					start_time = clock();
 					ui_ReselectCurrentGame(state);
-					//ui_UpdateBrowserPane(state, gamedata);
+					if (state->page_changed == 1){
+						ui_UpdateBrowserPane(state, gamedata);
+						state->page_changed = 0;
+					}
 					ui_UpdateBrowserPaneStatus(state);
 					end_time = clock();
 					timers_Print(start_time, end_time, "Scroll Browser Up", config->timers);
@@ -1106,15 +1111,20 @@ int main() {
 							state->selected_page++;
 						}
 						// Reset to line 1 of the new page
-						state->selected_line = 0;							
+						state->selected_line = 0;	
+						state->page_changed = 1;
 					} else {
 						// Move down one line
 						state->selected_line++;
+						state->page_changed = 0;
 					}
 					// Detect if selected game has changed
 					start_time = clock();
 					ui_ReselectCurrentGame(state);
-					//ui_UpdateBrowserPane(state, gamedata);
+					if (state->page_changed == 1){
+						ui_UpdateBrowserPane(state, gamedata);
+						state->page_changed = 0;
+					}
 					ui_UpdateBrowserPaneStatus(state);
 					end_time = clock();
 					timers_Print(start_time, end_time, "Scroll Browser Down", config->timers);

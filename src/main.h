@@ -41,6 +41,7 @@ typedef struct state {
 	unsigned char total_pages;			// Total number of pages in the selected_list
 	unsigned char active_pane;			// The pane which currently has focus
 	unsigned char selected_start;		// Which start file to launch, 0==start, 1==alt_start
+	unsigned char page_changed;			// Whether we have browsed to a new page or not
 	
 	int selected_filter;					// Which filter to use, 0==none, 1==genre, 2==series
 	int selected_filter_string;			// Which filter string is selected for non=multichoice filters
